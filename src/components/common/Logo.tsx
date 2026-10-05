@@ -1,58 +1,42 @@
 import { Link } from 'react-router-dom'
-import { IntensityMark } from '@/assets/brand/IntensityMark'
+import logoFull from '@/assets/brand/intensity-research-logo-full.png'
+import logoMark from '@/assets/brand/intensity-research-mark.png'
 import { BRAND } from '@/config/brand'
 import { cn } from '@/lib/utils'
 
 interface LogoProps {
   to?: string
-  /** Render for the always-dark sidebar surface. */
-  inverted?: boolean
+  /** Show only the globe mark (collapsed sidebar, mobile header). */
   compact?: boolean
   size?: 'md' | 'lg'
+  /** Show the "Admin" tag beside the full logo. */
+  showBadge?: boolean
   className?: string
 }
 
-export function Logo({
-  to = '/admin/dashboard',
-  inverted = false,
-  compact = false,
-  size = 'md',
-  className,
-}: LogoProps) {
+export function Logo({ to = '/admin/dashboard', compact = false, size = 'md', showBadge = true, className }: LogoProps) {
   return (
     <Link
       to={to}
-      className={cn('flex items-center gap-3 rounded-lg outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50', className)}
+      className={cn(
+        'flex shrink-0 items-center gap-2.5 rounded-lg outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
+        className,
+      )}
       aria-label={BRAND.appName}
     >
-      <IntensityMark className={cn('shrink-0 drop-shadow-[0_6px_18px_rgba(47,107,255,0.35)]', size === 'lg' ? 'size-11' : 'size-9')} />
-      {!compact ? (
-        <span className="min-w-0 leading-none">
-          <span
-            className={cn(
-              'font-display block font-extrabold tracking-[0.08em] uppercase',
-              size === 'lg' ? 'text-[1.2rem]' : 'text-[1.02rem]',
-              inverted ? 'text-white' : 'text-foreground',
-            )}
-          >
-            Intensity
-          </span>
-          <span
-            className={cn(
-              'mt-1.5 flex items-center gap-2 text-[10px] font-semibold tracking-[0.32em] uppercase',
-              inverted ? 'text-sidebar-foreground/70' : 'text-muted-foreground',
-            )}
-          >
-            Research
-            <span
-              className={cn(
-                'rounded-sm px-1.5 py-0.5 text-[9px] tracking-[0.14em]',
-                inverted ? 'bg-sidebar-primary/15 text-sidebar-primary' : 'bg-primary/12 text-primary',
-              )}
-            >
-              Admin
-            </span>
-          </span>
+      {/* The brand's on-dark treatment is a solid white logo. */}
+      <img
+        src={compact ? logoMark : logoFull}
+        alt=""
+        draggable={false}
+        className={cn(
+          'shrink-0 select-none dark:brightness-0 dark:invert',
+          compact ? (size === 'lg' ? 'size-11' : 'size-9') : size === 'lg' ? 'h-14 w-auto' : 'h-10 w-auto',
+        )}
+      />
+      {!compact && showBadge ? (
+        <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[9px] leading-none font-semibold tracking-[0.14em] text-primary uppercase ring-1 ring-primary/15 ring-inset">
+          Admin
         </span>
       ) : null}
     </Link>

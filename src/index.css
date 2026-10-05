@@ -50,6 +50,7 @@
   --color-info-foreground: var(--info-foreground);
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
+  --shadow-elevated: var(--elevated-shadow);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -160,17 +161,25 @@
 
 .admin-canvas {
   background:
-    radial-gradient(1200px 520px at 100% -10%, color-mix(in oklab, var(--primary) 9%, transparent), transparent 60%),
-    radial-gradient(900px 420px at -10% 110%, color-mix(in oklab, var(--highlight) 6%, transparent), transparent 60%),
+    radial-gradient(1200px 520px at 100% -10%, color-mix(in oklab, var(--primary) 7%, transparent), transparent 60%),
+    radial-gradient(900px 420px at -10% 110%, color-mix(in oklab, var(--highlight) 5%, transparent), transparent 60%),
     var(--background);
 }
 
 .login-canvas {
   background:
-    radial-gradient(900px 600px at 12% 8%, color-mix(in oklab, var(--primary) 16%, transparent), transparent 60%),
-    radial-gradient(700px 520px at 92% 18%, color-mix(in oklab, var(--cyan) 11%, transparent), transparent 60%),
-    radial-gradient(800px 600px at 70% 110%, color-mix(in oklab, var(--highlight) 12%, transparent), transparent 60%),
+    radial-gradient(900px 600px at 12% 8%, color-mix(in oklab, var(--primary) 12%, transparent), transparent 60%),
+    radial-gradient(700px 520px at 92% 18%, color-mix(in oklab, var(--cyan) 8%, transparent), transparent 60%),
+    radial-gradient(800px 600px at 70% 110%, color-mix(in oklab, var(--highlight) 9%, transparent), transparent 60%),
     var(--background);
+}
+
+/* Brand panel beside the sign-in form. */
+.login-hero {
+  background:
+    radial-gradient(560px 480px at -8% -6%, color-mix(in oklab, var(--primary) 16%, transparent), transparent 65%),
+    radial-gradient(600px 520px at 108% 106%, color-mix(in oklab, var(--highlight) 14%, transparent), transparent 65%),
+    linear-gradient(165deg, color-mix(in oklab, var(--accent) 80%, var(--card)) 0%, var(--card) 100%);
 }
 
 /* Subtle measurement grid used on brand surfaces. */

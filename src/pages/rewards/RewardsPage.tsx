@@ -75,7 +75,7 @@ export function RewardsPage() {
               value={settings.data ? `${formatNumber(settings.data.registrationRewardPoints)} pts` : '—'}
               hint="Credited on sign-up"
               icon={Sparkles}
-              tone="violet"
+              tone="teal"
             />
           </>
         )}

@@ -24,9 +24,9 @@ function SidebarLink({
       aria-label={collapsed ? item.label : undefined}
       className={({ isActive }) =>
         cn(
-          'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/70 transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none',
+          'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/80 transition-colors duration-150 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none',
           collapsed && 'justify-center px-2',
-          isActive && 'bg-sidebar-accent text-sidebar-accent-foreground',
+          isActive && 'bg-sidebar-accent text-sidebar-accent-foreground hover:bg-sidebar-accent',
         )
       }
     >
@@ -42,7 +42,7 @@ function SidebarLink({
           <item.icon
             className={cn(
               'size-[1.05rem] shrink-0 transition-colors',
-              isActive ? 'text-sidebar-primary' : 'text-sidebar-foreground/55 group-hover:text-sidebar-foreground/85',
+              isActive ? 'text-sidebar-primary' : 'text-sidebar-foreground/60 group-hover:text-sidebar-primary',
             )}
           />
           {!collapsed ? <span className="truncate font-medium">{item.label}</span> : null}
@@ -75,7 +75,7 @@ export function AdminSidebar({
   return (
     <div className="flex h-full flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       <div className={cn('flex h-16 items-center px-5', collapsed && 'justify-center px-3')}>
-        <Logo inverted compact={collapsed} />
+        <Logo compact={collapsed} />
       </div>
       <div className="mx-4 h-px bg-sidebar-border" aria-hidden />
 
@@ -85,7 +85,7 @@ export function AdminSidebar({
             {collapsed ? (
               <div className="mx-auto mb-2 h-px w-6 bg-sidebar-border first:hidden" aria-hidden />
             ) : (
-              <p className="px-3 pb-1 text-[0.68rem] font-semibold tracking-[0.14em] text-sidebar-foreground/40 uppercase">
+              <p className="px-3 pb-1 text-[0.68rem] font-semibold tracking-[0.14em] text-sidebar-foreground/55 uppercase">
                 {section.label}
               </p>
             )}
@@ -98,9 +98,9 @@ export function AdminSidebar({
 
       <div className="space-y-3 border-t border-sidebar-border p-3">
         {!collapsed && user ? (
-          <div className="rounded-lg bg-sidebar-accent/60 px-3 py-2.5">
-            <p className="truncate text-sm font-medium">{user.name}</p>
-            <p className="truncate text-xs text-sidebar-foreground/55">{user.email || user.role}</p>
+          <div className="rounded-lg border border-sidebar-border bg-muted/60 px-3 py-2.5">
+            <p className="truncate text-sm font-medium text-foreground">{user.name}</p>
+            <p className="truncate text-xs text-sidebar-foreground/70">{user.email || user.role}</p>
           </div>
         ) : null}
         <Button
@@ -121,7 +121,7 @@ export function AdminSidebar({
         {!collapsed ? (
           <a
             href={`mailto:${BRAND.email}`}
-            className="flex items-center gap-2 px-3 pb-1 text-[0.7rem] text-sidebar-foreground/40 transition-colors hover:text-sidebar-foreground/75"
+            className="flex items-center gap-2 px-3 pb-1 text-[0.7rem] text-sidebar-foreground/60 transition-colors hover:text-sidebar-primary"
           >
             <Mail className="size-3" />
             {BRAND.email}

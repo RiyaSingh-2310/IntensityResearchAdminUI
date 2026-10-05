@@ -27,8 +27,8 @@ const PAYOUT_TOGGLES: { key: 'amazonEnabled' | 'flipkartEnabled' | 'paypalEnable
 ]
 
 const THEME_OPTIONS: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
-  { value: 'dark', label: 'Dark', icon: Moon },
   { value: 'light', label: 'Light', icon: Sun },
+  { value: 'dark', label: 'Dark', icon: Moon },
 ]
 
 function initials(name: string) {

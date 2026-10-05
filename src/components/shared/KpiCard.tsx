@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 const toneStyles = {
   primary: 'bg-primary/12 text-primary ring-primary/20',
   cyan: 'bg-cyan/12 text-cyan ring-cyan/20',
-  violet: 'bg-highlight/12 text-highlight ring-highlight/20',
+  teal: 'bg-highlight/12 text-highlight ring-highlight/20',
   success: 'bg-success/12 text-success ring-success/20',
   warning: 'bg-warning/12 text-warning ring-warning/20',
 } as const

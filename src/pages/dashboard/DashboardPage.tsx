@@ -64,7 +64,7 @@ export function DashboardPage() {
             value={formatNumber(data.outstandingPoints)}
             hint="Points held across all panelists"
             icon={Wallet}
-            tone="violet"
+            tone="teal"
           />
           <KpiCard
             label="Points redeemed"

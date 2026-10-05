@@ -2,7 +2,7 @@ export const THEME_STORAGE_KEY = 'ir_admin_theme'
 
 export type ThemeMode = 'light' | 'dark'
 
-export const DEFAULT_THEME: ThemeMode = 'dark'
+export const DEFAULT_THEME: ThemeMode = 'light'
 
 export const CHART_COLOR_VARS = [
   'var(--chart-1)',
@@ -20,23 +20,23 @@ export function readCssColor(name: string, fallback: string) {
 
 export function getChartColors() {
   return [
-    readCssColor('--chart-1', '#5c8dff'),
-    readCssColor('--chart-2', '#46c2e6'),
-    readCssColor('--chart-3', '#9d86ff'),
-    readCssColor('--chart-4', '#4fd1a0'),
-    readCssColor('--chart-5', '#f3bd4f'),
+    readCssColor('--chart-1', '#1a5fd0'),
+    readCssColor('--chart-2', '#13a3b4'),
+    readCssColor('--chart-3', '#0d2b5e'),
+    readCssColor('--chart-4', '#7fb0ee'),
+    readCssColor('--chart-5', '#9aa8bb'),
   ]
 }
 
 export function getChartSurface() {
   return {
-    grid: readCssColor('--border', '#1d2840'),
-    tooltipBg: readCssColor('--popover', '#101a2e'),
-    tooltipText: readCssColor('--popover-foreground', '#e7ecf6'),
-    tooltipBorder: readCssColor('--border', '#1d2840'),
-    tick: readCssColor('--muted-foreground', '#93a0ba'),
-    legend: readCssColor('--foreground', '#e7ecf6'),
-    cursor: readCssColor('--muted', '#131c30'),
-    card: readCssColor('--card', '#0d1424'),
+    grid: readCssColor('--border', '#e1e7ef'),
+    tooltipBg: readCssColor('--popover', '#ffffff'),
+    tooltipText: readCssColor('--popover-foreground', '#0d1f3c'),
+    tooltipBorder: readCssColor('--border', '#e1e7ef'),
+    tick: readCssColor('--muted-foreground', '#5a6a82'),
+    legend: readCssColor('--foreground', '#0d1f3c'),
+    cursor: readCssColor('--muted', '#f0f3f8'),
+    card: readCssColor('--card', '#ffffff'),
   }
 }

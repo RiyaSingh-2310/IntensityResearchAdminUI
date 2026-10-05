@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="en" class="dark" style="color-scheme: dark">
+<html lang="en" style="color-scheme: light">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#070b14" />
+    <meta name="theme-color" content="#f5f7fb" />
     <meta name="description" content="Intensity Research Admin — panel, survey assignment, and rewards administration." />
     <meta name="robots" content="noindex, nofollow" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -18,7 +18,7 @@
       ;(function () {
         try {
           var stored = window.localStorage.getItem('ir_admin_theme')
-          var theme = stored === 'light' ? 'light' : 'dark'
+          var theme = stored === 'dark' ? 'dark' : 'light'
           var root = document.documentElement
           root.classList.toggle('dark', theme === 'dark')
           root.style.colorScheme = theme

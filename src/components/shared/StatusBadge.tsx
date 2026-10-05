@@ -8,7 +8,7 @@ const tones = {
   warning: 'bg-warning-foreground text-warning ring-warning/25',
   danger: 'bg-destructive/12 text-destructive ring-destructive/25',
   info: 'bg-info-foreground text-info ring-info/25',
-  violet: 'bg-highlight-foreground text-highlight ring-highlight/25',
+  teal: 'bg-highlight-foreground text-highlight ring-highlight/25',
   muted: 'bg-muted text-muted-foreground ring-border',
 } as const
 

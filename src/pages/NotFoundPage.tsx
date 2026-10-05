@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 export function NotFoundPage() {
   return (
     <div className="login-canvas flex min-h-svh flex-col items-center justify-center px-4 py-10">
-      <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card p-6 text-center shadow-[0_24px_80px_-32px_rgba(0,0,0,0.6)] sm:p-8">
+      <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card p-6 text-center shadow-elevated sm:p-8">
         <div className="brand-hairline absolute inset-x-0 top-0 h-px" aria-hidden />
         <div className="absolute top-4 right-4">
           <ThemeToggle />
