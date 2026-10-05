@@ -1,0 +1,3 @@
+# SPA fallback for Netlify and Cloudflare Pages.
+# Existing static files are served first. Missing frontend paths rewrite to the app (HTTP 200), not a redirect.
+/*    /index.html   200

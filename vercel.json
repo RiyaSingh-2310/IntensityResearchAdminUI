@@ -1,0 +1,13 @@
+{
+  "build": {
+    "env": {
+      "VITE_API_BASE_URL": "https://intensityresearch.com/intensityapi"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

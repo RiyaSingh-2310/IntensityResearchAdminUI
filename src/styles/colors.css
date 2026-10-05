@@ -1,0 +1,97 @@
+/*
+ * Intensity Research design tokens.
+ * Dark is the primary experience; light is kept for accessibility preference.
+ * Status pairs follow `bg-{tone}-foreground text-{tone}` (soft surface + readable ink).
+ */
+:root {
+  --radius: 0.75rem;
+  --background: #f3f5fa;
+  --foreground: #0b1324;
+  --card: #ffffff;
+  --card-foreground: #0b1324;
+  --popover: #ffffff;
+  --popover-foreground: #0b1324;
+  --primary: #2456d6;
+  --primary-foreground: #ffffff;
+  --secondary: #eaeef7;
+  --secondary-foreground: #0b1324;
+  --muted: #eef1f7;
+  --muted-foreground: #56627c;
+  --accent: #e7edfb;
+  --accent-foreground: #0b1324;
+  --destructive: #c42b2b;
+  --destructive-foreground: #fff5f5;
+  --border: #dbe1ec;
+  --input: #cfd7e6;
+  --ring: #0b8fb3;
+  --highlight: #6d4fe0;
+  --highlight-foreground: #f1edff;
+  --cyan: #0b8fb3;
+  --success: #137a52;
+  --success-foreground: #e3f5ec;
+  --warning: #9a5b00;
+  --warning-foreground: #fdf1dc;
+  --info: #1f5fbf;
+  --info-foreground: #e4eefc;
+  --surface: #f8f9fc;
+  --surface-elevated: #ffffff;
+  --chart-1: #2456d6;
+  --chart-2: #0b8fb3;
+  --chart-3: #6d4fe0;
+  --chart-4: #137a52;
+  --chart-5: #c27803;
+  --sidebar: #070c18;
+  --sidebar-foreground: #c6d0e3;
+  --sidebar-primary: #4cc9f0;
+  --sidebar-primary-foreground: #04101c;
+  --sidebar-accent: #121c33;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #151f37;
+  --sidebar-ring: #4cc9f0;
+}
+
+.dark {
+  --background: #060a13;
+  --foreground: #e7ecf6;
+  --card: #0d1424;
+  --card-foreground: #e7ecf6;
+  --popover: #101a2e;
+  --popover-foreground: #e7ecf6;
+  --primary: #5c8dff;
+  --primary-foreground: #030814;
+  --secondary: #141e34;
+  --secondary-foreground: #e7ecf6;
+  --muted: #131c30;
+  --muted-foreground: #93a0ba;
+  --accent: #17233d;
+  --accent-foreground: #f2f5fb;
+  --destructive: #f26d6d;
+  --destructive-foreground: #2a0a0d;
+  --border: #1d2840;
+  --input: #27344f;
+  --ring: #46c2e6;
+  --highlight: #9d86ff;
+  --highlight-foreground: #1d1640;
+  --cyan: #46c2e6;
+  --success: #4fd1a0;
+  --success-foreground: #0b2a20;
+  --warning: #f3bd4f;
+  --warning-foreground: #2e2108;
+  --info: #6fb6ff;
+  --info-foreground: #0d2140;
+  --surface: #0a1020;
+  --surface-elevated: #121b30;
+  --chart-1: #5c8dff;
+  --chart-2: #46c2e6;
+  --chart-3: #9d86ff;
+  --chart-4: #4fd1a0;
+  --chart-5: #f3bd4f;
+  --sidebar: #050912;
+  --sidebar-foreground: #b7c2d8;
+  --sidebar-primary: #4cc9f0;
+  --sidebar-primary-foreground: #04101c;
+  --sidebar-accent: #111a2f;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #121b30;
+  --sidebar-ring: #4cc9f0;
+}

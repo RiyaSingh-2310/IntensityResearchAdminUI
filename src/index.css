@@ -1,0 +1,261 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import './styles/colors.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Manrope', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
+  --color-cyan: var(--cyan);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  a[href],
+  [role='link'],
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled='true'],
+  [disabled] {
+    cursor: not-allowed;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* Hide native number spinners globally; typing remains allowed. */
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* Native <option> lists inherit OS colors; keep them legible in dark mode. */
+  .dark select option {
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+  }
+
+  /* Tables: tabular figures keep numeric columns aligned. */
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Table headers read as metadata rather than content. */
+  [data-slot='table-head'] {
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  [data-slot='table-header'] {
+    background-color: color-mix(in oklab, var(--muted) 55%, transparent);
+  }
+}
+
+@utility font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Thin, theme-aware scrollbars. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--muted-foreground) 35%, transparent) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklab, var(--muted-foreground) 30%, transparent);
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-canvas {
+  background:
+    radial-gradient(1200px 520px at 100% -10%, color-mix(in oklab, var(--primary) 9%, transparent), transparent 60%),
+    radial-gradient(900px 420px at -10% 110%, color-mix(in oklab, var(--highlight) 6%, transparent), transparent 60%),
+    var(--background);
+}
+
+.login-canvas {
+  background:
+    radial-gradient(900px 600px at 12% 8%, color-mix(in oklab, var(--primary) 16%, transparent), transparent 60%),
+    radial-gradient(700px 520px at 92% 18%, color-mix(in oklab, var(--cyan) 11%, transparent), transparent 60%),
+    radial-gradient(800px 600px at 70% 110%, color-mix(in oklab, var(--highlight) 12%, transparent), transparent 60%),
+    var(--background);
+}
+
+/* Subtle measurement grid used on brand surfaces. */
+.brand-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--foreground) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--foreground) 5%, transparent) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse at 30% 30%, black 20%, transparent 75%);
+}
+
+.brand-gradient-text {
+  background: linear-gradient(100deg, var(--primary) 0%, var(--cyan) 55%, var(--highlight) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.brand-hairline {
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--primary) 70%, transparent), color-mix(in oklab, var(--cyan) 70%, transparent), transparent);
+}
+
+.login-field {
+  background-color: var(--card) !important;
+  color: var(--foreground);
+  caret-color: var(--foreground);
+}
+
+.login-field:hover:not(:disabled):not(:focus-visible) {
+  background-color: var(--card) !important;
+  border-color: color-mix(in oklab, var(--ring) 40%, var(--input));
+}
+
+.login-field:focus-visible {
+  background-color: var(--card) !important;
+}
+
+.login-field:disabled {
+  background-color: var(--card) !important;
+}
+
+/* Browser autofill would otherwise paint a pale yellow/blue box on dark surfaces. */
+input:autofill,
+input:autofill:hover,
+input:autofill:focus,
+input:autofill:active,
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--foreground) !important;
+  caret-color: var(--foreground);
+  border-color: var(--input);
+  box-shadow: 0 0 0 1000px var(--card) inset !important;
+  transition: background-color 99999s ease-out 0s !important;
+}
+
+input:autofill:focus-visible,
+input:-webkit-autofill:focus-visible {
+  border-color: var(--ring);
+  box-shadow:
+    0 0 0 1000px var(--card) inset,
+    0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent) !important;
+}
+
+input[aria-invalid='true']:autofill,
+input[aria-invalid='true']:-webkit-autofill {
+  border-color: var(--destructive);
+  box-shadow:
+    0 0 0 1000px var(--card) inset,
+    0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent) !important;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--primary) 35%, transparent);
+  color: var(--foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
