@@ -5,8 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-display: 'Manrope', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Fraunces', ui-serif, Georgia, 'Times New Roman', serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -39,6 +39,8 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-teal: var(--teal);
+  --color-teal-foreground: var(--teal-foreground);
   --color-highlight: var(--highlight);
   --color-highlight-foreground: var(--highlight-foreground);
   --color-cyan: var(--cyan);
@@ -50,7 +52,6 @@
   --color-info-foreground: var(--info-foreground);
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
-  --shadow-elevated: var(--elevated-shadow);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -70,7 +71,6 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-feature-settings: 'cv11', 'ss01';
   }
 
   button:not(:disabled),
@@ -108,98 +108,23 @@
     background-color: var(--popover);
     color: var(--popover-foreground);
   }
-
-  /* Tables: tabular figures keep numeric columns aligned. */
-  table {
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* Table headers read as metadata rather than content. */
-  [data-slot='table-head'] {
-    color: var(--muted-foreground);
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-
-  [data-slot='table-header'] {
-    background-color: color-mix(in oklab, var(--muted) 55%, transparent);
-  }
 }
 
 @utility font-display {
   font-family: var(--font-display);
-  letter-spacing: -0.015em;
 }
 
 @utility tabular {
   font-variant-numeric: tabular-nums;
 }
 
-/* Thin, theme-aware scrollbars. */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in oklab, var(--muted-foreground) 35%, transparent) transparent;
-}
-
-*::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-*::-webkit-scrollbar-thumb {
-  background-color: color-mix(in oklab, var(--muted-foreground) 30%, transparent);
-  border: 3px solid transparent;
-  border-radius: 999px;
-  background-clip: content-box;
-}
-
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
-
+/* Plain canvases: no patterns, textures, or decorative gradients. */
 .admin-canvas {
-  background:
-    radial-gradient(1200px 520px at 100% -10%, color-mix(in oklab, var(--primary) 7%, transparent), transparent 60%),
-    radial-gradient(900px 420px at -10% 110%, color-mix(in oklab, var(--highlight) 5%, transparent), transparent 60%),
-    var(--background);
+  background: var(--background);
 }
 
 .login-canvas {
-  background:
-    radial-gradient(900px 600px at 12% 8%, color-mix(in oklab, var(--primary) 12%, transparent), transparent 60%),
-    radial-gradient(700px 520px at 92% 18%, color-mix(in oklab, var(--cyan) 8%, transparent), transparent 60%),
-    radial-gradient(800px 600px at 70% 110%, color-mix(in oklab, var(--highlight) 9%, transparent), transparent 60%),
-    var(--background);
-}
-
-/* Brand panel beside the sign-in form. */
-.login-hero {
-  background:
-    radial-gradient(560px 480px at -8% -6%, color-mix(in oklab, var(--primary) 16%, transparent), transparent 65%),
-    radial-gradient(600px 520px at 108% 106%, color-mix(in oklab, var(--highlight) 14%, transparent), transparent 65%),
-    linear-gradient(165deg, color-mix(in oklab, var(--accent) 80%, var(--card)) 0%, var(--card) 100%);
-}
-
-/* Subtle measurement grid used on brand surfaces. */
-.brand-grid {
-  background-image:
-    linear-gradient(to right, color-mix(in oklab, var(--foreground) 5%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in oklab, var(--foreground) 5%, transparent) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: radial-gradient(ellipse at 30% 30%, black 20%, transparent 75%);
-}
-
-.brand-gradient-text {
-  background: linear-gradient(100deg, var(--primary) 0%, var(--cyan) 55%, var(--highlight) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.brand-hairline {
-  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--primary) 70%, transparent), color-mix(in oklab, var(--cyan) 70%, transparent), transparent);
+  background: var(--background);
 }
 
 .login-field {
@@ -221,7 +146,7 @@
   background-color: var(--card) !important;
 }
 
-/* Browser autofill would otherwise paint a pale yellow/blue box on dark surfaces. */
+/* Browser autofill would otherwise paint a pale yellow/blue box over the inputs. */
 input:autofill,
 input:autofill:hover,
 input:autofill:focus,
@@ -254,7 +179,7 @@ input[aria-invalid='true']:-webkit-autofill {
 }
 
 ::selection {
-  background: color-mix(in oklab, var(--primary) 35%, transparent);
+  background: color-mix(in oklab, var(--primary) 22%, white);
   color: var(--foreground);
 }
 

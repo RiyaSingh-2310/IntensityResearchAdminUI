@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { AdminBar, AdminDonut, AdminLine } from '@/components/charts/AdminCharts'
+import { ChartCard } from '@/components/charts/ChartCard'
 import { AgeDistributionChart } from '@/components/analytics/AgeDistributionChart'
 import { GenderDistributionChart } from '@/components/analytics/GenderDistributionChart'
 import { PointsEconomyChart } from '@/components/analytics/PointsEconomyChart'
@@ -6,13 +8,11 @@ import { RegistrationTrendChart } from '@/components/analytics/RegistrationTrend
 import { RewardDistributionChart } from '@/components/analytics/RewardDistributionChart'
 import { RewardStatusChart } from '@/components/analytics/RewardStatusChart'
 import { sampleNote } from '@/components/analytics/sampleNote'
-import { AdminBar, AdminDonut, AdminLine } from '@/components/charts/AdminCharts'
-import { ChartCard } from '@/components/charts/ChartCard'
-import { PageHeader } from '@/components/shared/PageHeader'
 import { ErrorState } from '@/components/shared/PageState'
+import { PageHeader } from '@/components/shared/PageHeader'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { usePanelistAnalytics, useRewardAnalytics } from '@/hooks/useAnalytics'
 import { useChartTheme } from '@/hooks/useChartTheme'
+import { usePanelistAnalytics, useRewardAnalytics } from '@/hooks/useAnalytics'
 import { getErrorMessage } from '@/lib/errors'
 
 const RANGE_COPY = {
@@ -21,20 +21,13 @@ const RANGE_COPY = {
   monthly: 'New panelists per month, last 12 months.',
 } as const
 
-function SectionHeading({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="mt-10 mb-4 first:mt-0">
-      <h2 className="font-display text-lg font-semibold">{title}</h2>
-      <p className="text-sm text-muted-foreground">{description}</p>
-    </div>
-  )
-}
-
 export function AnalyticsPage() {
   const [range, setRange] = useState<keyof typeof RANGE_COPY>('daily')
   const panelists = usePanelistAnalytics()
   const rewards = useRewardAnalytics()
   const { colors } = useChartTheme()
+
+  const trend = panelists.data?.registrationTrend[range] ?? []
   const economy = rewards.data?.pointsEconomy
   const note = sampleNote(panelists.data)
 
@@ -42,64 +35,45 @@ export function AnalyticsPage() {
     <div>
       <PageHeader
         title="Analytics"
-        description="Calculated in the browser from live panelist, survey and payout data."
+        description="Panelist questionnaire distributions and the rewards economy."
         crumbs={[{ label: 'Admin', to: '/admin/dashboard' }, { label: 'Analytics' }]}
       />
 
-      <SectionHeading title="Rewards" description="Point balances and payout requests." />
       {rewards.isError ? (
         <ErrorState message={getErrorMessage(rewards.error)} onRetry={() => rewards.refetch()} />
       ) : (
-        <>
-          <PointsEconomyChart
-            outstanding={economy?.outstanding}
-            redeemed={economy?.redeemed}
-            pending={economy?.pending}
-            loading={rewards.isLoading}
-          />
-          <div className="mt-6 grid gap-6 lg:grid-cols-2">
-            <ChartCard
-              title="Points redeemed"
-              description="Approved payouts per day, last 30 days."
-              loading={rewards.isLoading}
-              empty={!rewards.data?.redeemed.length}
-            >
-              <AdminLine data={rewards.data?.redeemed ?? []} color={colors[1]} />
-            </ChartCard>
-            <RewardStatusChart data={rewards.data?.requestStatus} loading={rewards.isLoading} />
-            <RewardDistributionChart data={rewards.data?.typeDistribution} loading={rewards.isLoading} />
-            <ChartCard
-              title="Approved payouts by method"
-              description="Number of approved requests."
-              loading={rewards.isLoading}
-              empty={!rewards.data?.topRewards.length}
-            >
-              <AdminBar data={rewards.data?.topRewards ?? []} color={colors[2]} />
-            </ChartCard>
-          </div>
-        </>
+        <PointsEconomyChart
+          outstanding={economy?.outstanding}
+          redeemed={economy?.redeemed}
+          pending={economy?.pending}
+          loading={rewards.isLoading}
+        />
       )}
 
-      <SectionHeading title="Panel" description="Growth and onboarding demographics." />
       {panelists.isError ? (
-        <ErrorState message={getErrorMessage(panelists.error)} onRetry={() => panelists.refetch()} />
+        <div className="mt-4">
+          <ErrorState message={getErrorMessage(panelists.error)} onRetry={() => panelists.refetch()} />
+        </div>
       ) : (
         <>
-          <RegistrationTrendChart
-            data={panelists.data?.registrationTrend[range]}
-            loading={panelists.isLoading}
-            description={RANGE_COPY[range]}
-            action={
-              <Tabs value={range} onValueChange={(value) => setRange(value as typeof range)}>
-                <TabsList>
-                  <TabsTrigger value="daily">Daily</TabsTrigger>
-                  <TabsTrigger value="weekly">Weekly</TabsTrigger>
-                  <TabsTrigger value="monthly">Monthly</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            }
-          />
-          <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          <div className="mt-4">
+            <RegistrationTrendChart
+              data={trend}
+              loading={panelists.isLoading}
+              description={RANGE_COPY[range]}
+              action={
+                <Tabs value={range} onValueChange={(value) => setRange(value as typeof range)}>
+                  <TabsList>
+                    <TabsTrigger value="daily">Daily</TabsTrigger>
+                    <TabsTrigger value="weekly">Weekly</TabsTrigger>
+                    <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              }
+            />
+          </div>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
             <GenderDistributionChart data={panelists.data?.gender} loading={panelists.isLoading} description={note} />
             <AgeDistributionChart data={panelists.data?.ageRange} loading={panelists.isLoading} description={note} />
             <ChartCard
@@ -127,7 +101,7 @@ export function AnalyticsPage() {
               <AdminBar data={panelists.data?.householdIncome ?? []} color={colors[1]} />
             </ChartCard>
             <ChartCard
-              title="Shopping interests"
+              title="Shopping preferences"
               description={note}
               loading={panelists.isLoading}
               empty={!panelists.data?.shoppingPreferences.length}
@@ -136,6 +110,22 @@ export function AnalyticsPage() {
             </ChartCard>
           </div>
         </>
+      )}
+
+      <h2 className="font-display mt-8 mb-4 text-2xl">Reward analytics</h2>
+      {rewards.isError ? (
+        <ErrorState message={getErrorMessage(rewards.error)} onRetry={() => rewards.refetch()} />
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <ChartCard title="Rewards redeemed" loading={rewards.isLoading} empty={!rewards.data?.redeemed.length}>
+            <AdminLine data={rewards.data?.redeemed ?? []} color={colors[1]} />
+          </ChartCard>
+          <RewardDistributionChart data={rewards.data?.typeDistribution} loading={rewards.isLoading} />
+          <RewardStatusChart data={rewards.data?.requestStatus} loading={rewards.isLoading} />
+          <ChartCard title="Top rewards" loading={rewards.isLoading} empty={!rewards.data?.topRewards.length}>
+            <AdminBar data={rewards.data?.topRewards ?? []} />
+          </ChartCard>
+        </div>
       )}
     </div>
   )

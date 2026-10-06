@@ -19,21 +19,21 @@ export function ChartCard({
   children: ReactNode
 }) {
   return (
-    <Card className="min-w-0">
+    <Card className="shadow-sm">
       <CardHeader className="flex flex-row items-start justify-between gap-3">
         <div>
-          <CardTitle className="font-display text-base font-semibold">{title}</CardTitle>
+          <CardTitle className="font-display text-xl">{title}</CardTitle>
           {description ? <CardDescription>{description}</CardDescription> : null}
         </div>
         {action}
       </CardHeader>
       <CardContent>
         {loading ? (
-          <Skeleton className="h-64 w-full rounded-lg" />
+          <Skeleton className="h-64 w-full rounded-xl" />
         ) : empty ? (
           <EmptyState
-            title="No data yet"
-            description="This chart fills in once the API returns matching records."
+            title="No analytics data available."
+            description="This series will appear once the API returns results."
           />
         ) : (
           <div className="h-64 min-h-52">{children}</div>

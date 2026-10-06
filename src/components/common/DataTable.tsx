@@ -31,7 +31,7 @@ export function DataTable({
   children: ReactNode
 }) {
   return (
-    <Card className="gap-0 overflow-hidden py-0">
+    <Card className="gap-0 overflow-hidden py-0 shadow-sm">
       {toolbar}
       {loading ? (
         <div className="p-4">
@@ -49,7 +49,7 @@ export function DataTable({
         <>
           <div className="min-w-0 overflow-x-auto">{children}</div>
           {page && pageSize && total !== undefined && onPageChange ? (
-            <div className="border-t px-4">
+            <div className="px-4">
               <PaginationBar page={page} pageSize={pageSize} total={total} onPageChange={onPageChange} />
             </div>
           ) : null}

@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { Field } from '@/components/shared/Field'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Dialog,
   DialogContent,
@@ -9,9 +10,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
+import { usePanelist } from '@/hooks/usePanelists'
+import { GENDER_LABELS } from '@/lib/labels'
 import { required, sanitizePhoneInput, validateOptionalPhone } from '@/lib/validators'
 import type { Panelist, UpdatePanelistInput } from '@/types'
 
@@ -61,16 +62,21 @@ function PanelistEditForm({
     status: panelist.status === 'active' ? 'active' : 'inactive',
     isVerified: panelist.isVerified,
   })
-  const [errors, setErrors] = useState<Partial<Record<'firstName' | 'phone', string>>>({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const detail = usePanelist(panelist.id)
+  const profile = detail.data
+  const genderAnswer = profile?.onboardingAnswers.find((item) => item.question.toLowerCase().includes('gender'))
+  const genderLabel = profile?.gender
+    ? GENDER_LABELS[profile.gender]
+    : genderAnswer?.answer || (detail.isLoading ? 'Loading…' : '—')
 
-  function submit(event: FormEvent) {
-    event.preventDefault()
+  function submit() {
     const next = {
-      firstName: required(form.firstName, 'First name'),
-      phone: validateOptionalPhone(form.phone),
+      firstName: required(form.firstName, 'First name') ?? '',
+      phone: validateOptionalPhone(form.phone) ?? '',
     }
     setErrors(next)
-    if (next.firstName || next.phone || pending) return
+    if (Object.values(next).some(Boolean) || pending) return
     onSubmit({
       ...form,
       firstName: form.firstName.trim(),
@@ -81,82 +87,88 @@ function PanelistEditForm({
 
   return (
     <DialogContent className="sm:max-w-lg">
-      <form onSubmit={submit} noValidate className="grid gap-5">
-        <DialogHeader>
-          <DialogTitle className="font-display">Edit panelist</DialogTitle>
-          <DialogDescription>
-            Update contact details, account status and email verification. Onboarding answers are read-only.
-          </DialogDescription>
-        </DialogHeader>
-        <fieldset disabled={pending} className="grid gap-4 sm:grid-cols-2">
-          <Field label="First name" htmlFor="edit-first-name" error={errors.firstName}>
-            <Input
-              id="edit-first-name"
-              value={form.firstName}
-              aria-invalid={Boolean(errors.firstName)}
-              onChange={(event) => setForm({ ...form, firstName: event.target.value })}
-            />
-          </Field>
-          <Field label="Last name" htmlFor="edit-last-name">
-            <Input
-              id="edit-last-name"
-              value={form.lastName}
-              onChange={(event) => setForm({ ...form, lastName: event.target.value })}
-            />
-          </Field>
-          <Field label="Email" htmlFor="edit-email" hint="Email can't be changed by admins." className="sm:col-span-2">
-            <Input id="edit-email" value={panelist.email} disabled readOnly />
-          </Field>
-          <Field label="Phone (optional)" htmlFor="edit-phone" error={errors.phone}>
-            <Input
-              id="edit-phone"
-              inputMode="numeric"
-              autoComplete="tel"
-              value={form.phone}
-              aria-invalid={Boolean(errors.phone)}
-              onChange={(event) => setForm({ ...form, phone: sanitizePhoneInput(event.target.value) })}
-            />
-          </Field>
-          <Field label="Account status" htmlFor="edit-status">
-            <Select
-              value={form.status}
-              onValueChange={(value) => setForm({ ...form, status: value as UpdatePanelistInput['status'] })}
-            >
-              <SelectTrigger id="edit-status" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </Field>
-          <label
-            htmlFor="edit-verified"
-            className="flex cursor-pointer items-center justify-between gap-4 rounded-lg border bg-surface/50 px-4 py-3 sm:col-span-2"
+      <DialogHeader>
+        <DialogTitle>Edit panelist</DialogTitle>
+        <DialogDescription>
+          Update name, phone, account status, and email verification. Gender and onboarding answers come from the
+          panelist detail and cannot be changed here.
+        </DialogDescription>
+      </DialogHeader>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="First name" error={errors.firstName}>
+          <Input value={form.firstName} onChange={(event) => setForm({ ...form, firstName: event.target.value })} />
+        </Field>
+        <Field label="Last name">
+          <Input value={form.lastName} onChange={(event) => setForm({ ...form, lastName: event.target.value })} />
+        </Field>
+        <Field label="Email" className="sm:col-span-2">
+          <Input value={panelist.email} disabled />
+        </Field>
+        <Field label="Phone (optional)" error={errors.phone}>
+          <Input
+            inputMode="numeric"
+            autoComplete="tel"
+            value={form.phone}
+            onChange={(event) => setForm({ ...form, phone: sanitizePhoneInput(event.target.value) })}
+          />
+        </Field>
+        <Field label="Status" htmlFor="edit-panelist-status" className="sm:col-span-2">
+          <Select
+            value={form.status}
+            onValueChange={(value) => setForm({ ...form, status: value as UpdatePanelistInput['status'] })}
           >
-            <span>
-              <span className="block text-sm font-medium">Email verified</span>
-              <span className="block text-xs text-muted-foreground">
-                The survey assignment picker only lists active, verified panelists.
-              </span>
-            </span>
-            <Switch
-              id="edit-verified"
-              checked={form.isVerified}
-              onCheckedChange={(checked) => setForm({ ...form, isVerified: checked })}
-            />
-          </label>
-        </fieldset>
-        <DialogFooter>
-          <Button type="button" variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={pending}>
-            {pending ? 'Saving…' : 'Save changes'}
-          </Button>
-        </DialogFooter>
-      </form>
+            <SelectTrigger id="edit-panelist-status" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field label="Gender" className="sm:col-span-2">
+          <Input value={genderLabel} disabled readOnly />
+        </Field>
+        <Field
+          label="Verification"
+          htmlFor="edit-panelist-verification"
+          className="sm:col-span-2"
+          hint="Only active, verified panelists can be assigned to projects."
+        >
+          <Select
+            value={form.isVerified ? 'verified' : 'unverified'}
+            onValueChange={(value) => setForm({ ...form, isVerified: value === 'verified' })}
+          >
+            <SelectTrigger id="edit-panelist-verification" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="verified">Verified</SelectItem>
+              <SelectItem value="unverified">Unverified</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
+        {detail.isError ? (
+          <p className="text-xs text-destructive sm:col-span-2">
+            Onboarding answers could not be loaded. Name, phone, status, and verification can still be saved.
+          </p>
+        ) : null}
+        {(profile?.onboardingAnswers ?? [])
+          .filter((item) => !item.question.toLowerCase().includes('gender'))
+          .map((item) => (
+            <Field key={item.id || item.question} label={item.question || 'Onboarding answer'} className="sm:col-span-2">
+              <Input value={item.answer || '—'} disabled readOnly />
+            </Field>
+          ))}
+      </div>
+      <DialogFooter>
+        <Button variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>
+          Cancel
+        </Button>
+        <Button onClick={submit} disabled={pending}>
+          {pending ? 'Saving…' : 'Save changes'}
+        </Button>
+      </DialogFooter>
     </DialogContent>
   )
 }

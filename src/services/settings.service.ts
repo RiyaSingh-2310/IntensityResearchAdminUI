@@ -9,7 +9,7 @@ export const settingsService = {
     const settings = 'settings' in data && data.settings ? data.settings : (data as ApiSettings)
     return mapSettings(settings)
   },
-  async update(input: AdminSettings): Promise<AdminSettings> {
+  async update(input: AdminSettings): Promise<void> {
     const payload: ApiSettingsInput = {
       registration_reward_points: input.registrationRewardPoints,
       minimum_payout: input.minimumPayout,
@@ -18,7 +18,6 @@ export const settingsService = {
       paypal_enabled: input.paypalEnabled ? 1 : 0,
     }
     await apiRequest('/admin/settings', { method: 'PUT', body: payload })
-    return settingsService.get()
   },
   async sendTestEmail(email: string) {
     await apiRequest('/admin/test-email', { method: 'POST', body: { email: email.trim() } })

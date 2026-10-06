@@ -1,18 +1,17 @@
-import { Check, Eye, X } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { DataTable } from '@/components/common/DataTable'
 import { FilterToolbar } from '@/components/common/FilterToolbar'
 import { RowActions } from '@/components/common/RowActions'
 import { SearchField } from '@/components/common/SearchField'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { Field } from '@/components/shared/Field'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { SortableHeader } from '@/components/shared/SortableHeader'
 import { RequestStatusBadge } from '@/components/shared/StatusBadge'
 import { Button } from '@/components/ui/button'
-import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
-import { Label } from '@/components/ui/label'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
 import { useListQuery } from '@/hooks/useListQuery'
@@ -32,22 +31,14 @@ const defaultQuery: RewardRequestListQuery = {
 
 type Decision = { request: RewardRequest; action: 'approve' | 'reject' }
 
-function DetailRow({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="grid grid-cols-[8.5rem_1fr] gap-3 py-2.5 text-sm">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 break-words">{children}</dd>
-    </div>
-  )
-}
-
 export function RewardRequestsPage() {
-  const { search, setSearch, filters, setFilters, query, reset, setPage, sort } = useListQuery(defaultQuery)
+  const { search, setSearch, filters, setFilters, query, reset, sort, setPage } = useListQuery(defaultQuery)
   const list = useRewardRequestList(query)
   const [filterOpen, setFilterOpen] = useState(false)
   const [viewing, setViewing] = useState<RewardRequest | null>(null)
   const [decision, setDecision] = useState<Decision | null>(null)
   const [comment, setComment] = useState('')
+  const filtered = Boolean(query.search || (query.status && query.status !== 'all'))
   const mutate = useRewardRequestAction(() => {
     setDecision(null)
     setViewing(null)
@@ -61,9 +52,10 @@ export function RewardRequestsPage() {
 
   const copy = decision
     ? {
-        title: decision.action === 'approve' ? 'Approve this payout?' : 'Reject this payout?',
-        description: `${decision.request.panelistName} requested ${formatNumber(decision.request.points)} points via ${paymentMethodLabel(decision.request.rewardName)}.`,
-        confirmLabel: decision.action === 'approve' ? 'Approve request' : 'Reject request',
+        title:
+          decision.action === 'approve' ? 'Approve this request?' : 'Reject this request?',
+        description: `${decision.request.panelistName} requested ${paymentMethodLabel(decision.request.rewardName)} for ${formatNumber(decision.request.points)} points.`,
+        confirmLabel: decision.action === 'approve' ? 'Approve' : 'Reject',
       }
     : null
 
@@ -90,39 +82,11 @@ export function RewardRequestsPage() {
     )
   }
 
-  function actions(item: RewardRequest) {
-    return (
-      <RowActions>
-        <DropdownMenuItem onClick={() => setViewing(item)}>
-          <Eye className="size-4" />
-          View details
-        </DropdownMenuItem>
-        {item.status === 'pending' ? (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem disabled={mutate.isPending} onClick={() => openDecision(item, 'approve')}>
-              <Check className="size-4" />
-              Approve
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              variant="destructive"
-              disabled={mutate.isPending}
-              onClick={() => openDecision(item, 'reject')}
-            >
-              <X className="size-4" />
-              Reject
-            </DropdownMenuItem>
-          </>
-        ) : null}
-      </RowActions>
-    )
-  }
-
   return (
     <div>
       <PageHeader
         title="Reward Requests"
-        description="Review and action payout requests submitted by panelists."
+        description="Approve or reject redemptions before points leave the ledger."
         crumbs={[{ label: 'Admin', to: '/admin/dashboard' }, { label: 'Reward Requests' }]}
       />
 
@@ -136,7 +100,7 @@ export function RewardRequestsPage() {
                   setSearch(value)
                   setFilters((current) => ({ ...current, page: 1 }))
                 }}
-                placeholder="Search request ID, panelist, email or method"
+                placeholder="Search request, panelist, or reward"
                 searching={search !== query.search}
               />
             }
@@ -149,50 +113,47 @@ export function RewardRequestsPage() {
         loading={list.isLoading}
         error={list.isError ? getErrorMessage(list.error) : undefined}
         onRetry={() => list.refetch()}
-        emptyTitle="No reward requests found"
-        emptyDescription="Try a different status or search term."
+        emptyTitle={filtered ? 'No matching reward requests.' : 'No reward requests available.'}
+        emptyDescription={filtered ? 'Try a different search or clear the current filters.' : undefined}
         page={list.data?.page}
         pageSize={list.data?.pageSize}
         total={list.data?.total ?? 0}
         onPageChange={setPage}
       >
-        <div className="divide-y md:hidden">
+        <div className="space-y-3 p-4 md:hidden">
           {rows.map((item) => (
-            <div key={item.id} className="flex items-start gap-3 px-4 py-3.5">
-              <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setViewing(item)}>
-                <div className="flex items-center gap-2">
-                  <p className="truncate font-medium">{item.panelistName}</p>
-                  <RequestStatusBadge status={item.status} />
+            <button
+              key={item.id}
+              type="button"
+              className="w-full rounded-2xl border px-4 py-3 text-left"
+              onClick={() => setViewing(item)}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium">{item.requestId}</p>
+                  <p className="text-xs text-muted-foreground">{item.panelistName}</p>
                 </div>
-                <p className="mt-0.5 truncate text-xs text-muted-foreground">{item.panelistEmail || item.requestId}</p>
-                <p className="tabular mt-1.5 text-xs text-muted-foreground">
-                  {formatNumber(item.points)} pts · {paymentMethodLabel(item.rewardName)} ·{' '}
-                  {formatDateTime(item.requestedAt)}
-                </p>
-              </button>
-              {actions(item)}
-            </div>
+                <RequestStatusBadge status={item.status} />
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {paymentMethodLabel(item.rewardName)} · {formatNumber(item.points)} pts
+              </p>
+            </button>
           ))}
         </div>
         <div className="hidden md:block">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Request</TableHead>
+                <TableHead>Request ID</TableHead>
                 <TableHead>Panelist</TableHead>
-                <TableHead>Method</TableHead>
+                <TableHead>Reward</TableHead>
                 <TableHead>
-                  <SortableHeader
-                    label="Points"
-                    column="points"
-                    sortBy={filters.sortBy}
-                    sortDir={filters.sortDir}
-                    onSort={sort}
-                  />
+                  <SortableHeader label="Points" column="points" sortBy={filters.sortBy} sortDir={filters.sortDir} onSort={sort} />
                 </TableHead>
                 <TableHead>
                   <SortableHeader
-                    label="Requested"
+                    label="Request date"
                     column="requestedAt"
                     sortBy={filters.sortBy}
                     sortDir={filters.sortDir}
@@ -200,28 +161,38 @@ export function RewardRequestsPage() {
                   />
                 </TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="w-12 text-right">
-                  <span className="sr-only">Actions</span>
-                </TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-mono text-xs text-muted-foreground">{item.requestId}</TableCell>
+                <TableRow key={item.id} className={item.status === 'pending' ? 'bg-warning-foreground/40' : undefined}>
+                  <TableCell className="font-medium">{item.requestId}</TableCell>
                   <TableCell>
-                    <p className="font-medium">{item.panelistName}</p>
-                    {item.panelistEmail ? (
-                      <p className="text-xs text-muted-foreground">{item.panelistEmail}</p>
-                    ) : null}
+                    <p>{item.panelistName}</p>
+                    {item.panelistEmail ? <p className="text-xs text-muted-foreground">{item.panelistEmail}</p> : null}
                   </TableCell>
                   <TableCell>{paymentMethodLabel(item.rewardName)}</TableCell>
-                  <TableCell className="font-medium">{formatNumber(item.points)}</TableCell>
-                  <TableCell className="text-muted-foreground">{formatDateTime(item.requestedAt)}</TableCell>
+                  <TableCell>{formatNumber(item.points)}</TableCell>
+                  <TableCell>{formatDateTime(item.requestedAt)}</TableCell>
                   <TableCell>
                     <RequestStatusBadge status={item.status} />
                   </TableCell>
-                  <TableCell className="text-right">{actions(item)}</TableCell>
+                  <TableCell className="text-right">
+                    <RowActions>
+                      <DropdownMenuItem onClick={() => setViewing(item)}>View request</DropdownMenuItem>
+                      {item.status === 'pending' ? (
+                        <>
+                          <DropdownMenuItem disabled={mutate.isPending} onClick={() => openDecision(item, 'approve')}>
+                            Approve
+                          </DropdownMenuItem>
+                          <DropdownMenuItem disabled={mutate.isPending} onClick={() => openDecision(item, 'reject')}>
+                            Reject
+                          </DropdownMenuItem>
+                        </>
+                      ) : null}
+                    </RowActions>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -230,57 +201,42 @@ export function RewardRequestsPage() {
       </DataTable>
 
       <Sheet open={Boolean(viewing)} onOpenChange={(open) => !open && setViewing(null)}>
-        <SheetContent className="w-full sm:max-w-md">
-          <SheetHeader className="border-b">
-            <SheetTitle className="font-display flex items-center gap-2">
-              {viewing?.requestId}
-              {viewing ? <RequestStatusBadge status={viewing.status} /> : null}
-            </SheetTitle>
-            <SheetDescription>Payout request details</SheetDescription>
+        <SheetContent className="overflow-y-auto sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>{viewing?.requestId}</SheetTitle>
           </SheetHeader>
           {viewing ? (
-            <div className="flex-1 overflow-y-auto px-4">
-              <dl className="divide-y">
-                <DetailRow label="Panelist">
-                  <p className="font-medium">{viewing.panelistName}</p>
-                  {viewing.panelistEmail ? (
-                    <p className="text-xs text-muted-foreground">{viewing.panelistEmail}</p>
-                  ) : null}
-                </DetailRow>
-                <DetailRow label="Points requested">
-                  <span className="tabular font-medium">{formatNumber(viewing.points)}</span>
-                </DetailRow>
-                {viewing.panelistBalance !== undefined ? (
-                  <DetailRow label="Current balance">
-                    <span className="tabular">{formatNumber(viewing.panelistBalance)} pts</span>
-                  </DetailRow>
-                ) : null}
-                <DetailRow label="Payout method">{paymentMethodLabel(viewing.rewardName)}</DetailRow>
-                <DetailRow label="Requested">{formatDateTime(viewing.requestedAt)}</DetailRow>
-                {viewing.remark ? <DetailRow label="Panelist remark">{viewing.remark}</DetailRow> : null}
-                {viewing.actionBy ? <DetailRow label="Actioned by">{viewing.actionBy}</DetailRow> : null}
-                {viewing.actionDate ? (
-                  <DetailRow label="Actioned on">{formatDateTime(viewing.actionDate)}</DetailRow>
-                ) : null}
-                {viewing.comment ? <DetailRow label="Admin comment">{viewing.comment}</DetailRow> : null}
-              </dl>
-            </div>
-          ) : null}
-          {viewing?.status === 'pending' ? (
-            <div className="mt-auto flex gap-2 border-t p-4">
-              <Button
-                variant="outline"
-                className="flex-1 text-destructive hover:text-destructive"
-                disabled={mutate.isPending}
-                onClick={() => openDecision(viewing, 'reject')}
-              >
-                <X className="size-4" />
-                Reject
-              </Button>
-              <Button className="flex-1" disabled={mutate.isPending} onClick={() => openDecision(viewing, 'approve')}>
-                <Check className="size-4" />
-                Approve
-              </Button>
+            <div className="space-y-3 p-4 text-sm">
+              <p><span className="text-muted-foreground">Panelist:</span> {viewing.panelistName}</p>
+              {viewing.panelistEmail ? (
+                <p><span className="text-muted-foreground">Email:</span> {viewing.panelistEmail}</p>
+              ) : null}
+              <p><span className="text-muted-foreground">Reward:</span> {paymentMethodLabel(viewing.rewardName)}</p>
+              <p><span className="text-muted-foreground">Points:</span> {formatNumber(viewing.points)}</p>
+              {viewing.panelistBalance !== undefined ? (
+                <p><span className="text-muted-foreground">Current balance:</span> {formatNumber(viewing.panelistBalance)} pts</p>
+              ) : null}
+              <p><span className="text-muted-foreground">Requested:</span> {formatDateTime(viewing.requestedAt)}</p>
+              <p className="flex flex-wrap items-center gap-2">
+                <span className="text-muted-foreground">Status:</span>
+                <RequestStatusBadge status={viewing.status} />
+              </p>
+              {viewing.remark ? <p><span className="text-muted-foreground">Panelist remark:</span> {viewing.remark}</p> : null}
+              {viewing.actionBy ? <p><span className="text-muted-foreground">Actioned by:</span> {viewing.actionBy}</p> : null}
+              {viewing.actionDate ? (
+                <p><span className="text-muted-foreground">Actioned on:</span> {formatDateTime(viewing.actionDate)}</p>
+              ) : null}
+              {viewing.comment ? <p className="leading-6"><span className="text-muted-foreground">Admin comment:</span> {viewing.comment}</p> : null}
+              {viewing.status === 'pending' ? (
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <Button disabled={mutate.isPending} onClick={() => openDecision(viewing, 'approve')}>
+                    Approve
+                  </Button>
+                  <Button variant="outline" disabled={mutate.isPending} onClick={() => openDecision(viewing, 'reject')}>
+                    Reject
+                  </Button>
+                </div>
+              ) : null}
             </div>
           ) : null}
         </SheetContent>
@@ -294,25 +250,17 @@ export function RewardRequestsPage() {
         confirmLabel={copy?.confirmLabel}
         destructive={decision?.action === 'reject'}
         pending={mutate.isPending}
-        onConfirm={() =>
-          decision && mutate.mutate({ id: decision.request.id, action: decision.action, comment })
-        }
+        onConfirm={() => decision && mutate.mutate({ id: decision.request.id, action: decision.action, comment })}
       >
-        <div className="space-y-1.5">
-          <Label htmlFor="decision-comment">
-            Comment <span className="font-normal text-muted-foreground">(optional)</span>
-          </Label>
+        <Field label="Comment (optional)">
           <Textarea
-            id="decision-comment"
             value={comment}
-            onChange={(event) => setComment(event.target.value)}
-            placeholder={
-              decision?.action === 'reject' ? 'Let the panelist know why the request was rejected' : 'Add a note for the record'
-            }
             rows={3}
             disabled={mutate.isPending}
+            placeholder={decision?.action === 'reject' ? 'Reason for rejecting this request' : 'Note for the record'}
+            onChange={(event) => setComment(event.target.value)}
           />
-        </div>
+        </Field>
       </ConfirmDialog>
     </div>
   )

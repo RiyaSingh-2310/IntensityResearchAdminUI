@@ -28,6 +28,7 @@ export function usePanelistOptions() {
 
 function invalidatePanelists(queryClient: ReturnType<typeof useQueryClient>) {
   void queryClient.invalidateQueries({ queryKey: ['panelists'] })
+  void queryClient.invalidateQueries({ queryKey: ['analytics'] })
 }
 
 export function useUpdatePanelist(onSuccess?: () => void) {
@@ -77,8 +78,6 @@ export function useCreditPanelist(onSuccess?: () => void) {
     onSuccess: () => {
       notify.success('Points credited successfully.')
       invalidatePanelists(queryClient)
-      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.rewardAnalytics })
       onSuccess?.()
     },
     onError: (error) => notify.error(error),

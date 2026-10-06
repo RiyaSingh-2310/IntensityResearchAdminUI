@@ -154,22 +154,21 @@ function AssignPanelistsForm({
   const show = (key: keyof typeof validation) => (attempted ? errors[key] || validation[key] : undefined)
 
   return (
-    <DialogContent className="sm:max-w-2xl">
+    <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
       <DialogHeader>
-        <DialogTitle className="font-display">{step === 'select' ? 'Assign a survey' : 'Review assignment'}</DialogTitle>
+        <DialogTitle>{step === 'select' ? 'Assign panelists' : 'Review assignment'}</DialogTitle>
         <DialogDescription>
           {step === 'select'
-            ? 'Set the survey link and reward, then pick active, verified panelists. Points are credited only when you later mark an assignment complete.'
-            : 'Check the details below. Each selected panelist gets their own active assignment.'}
+            ? 'Choose verified, active panelists, a survey URL, and reward points. Completing an assignment later credits the survey reward once.'
+            : 'Confirm the assignment before it is sent to the Admin survey API.'}
         </DialogDescription>
       </DialogHeader>
 
       {step === 'select' ? (
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Survey name" htmlFor="assign-survey-name" className="sm:col-span-2" error={show('surveyName')}>
+            <Field label="Survey / project name" className="sm:col-span-2" error={show('surveyName')}>
               <Input
-                id="assign-survey-name"
                 value={surveyName}
                 maxLength={SURVEY_NAME_MAX_LENGTH}
                 placeholder="e.g. Brand feedback Q3"
@@ -178,32 +177,26 @@ function AssignPanelistsForm({
             </Field>
             <Field
               label="Survey URL"
-              htmlFor="assign-survey-url"
               className="sm:col-span-2"
               error={show('surveyUrl')}
-              hint="Include {panelist_id} where the survey vendor expects the panelist ID."
+              hint="Use {panelist_id} in the URL if the survey vendor should receive the panelist id."
             >
               <Input
-                id="assign-survey-url"
-                type="url"
                 value={surveyUrl}
                 placeholder="https://surveys.example.com/s/brand?uid={panelist_id}"
                 onChange={(event) => setSurveyUrl(event.target.value)}
               />
             </Field>
-            <Field label="Reward points per panelist" htmlFor="assign-points" error={show('rewardPoints')}>
-              <PointsInput id="assign-points" value={rewardPoints} placeholder="e.g. 100" onValueChange={setRewardPoints} />
+            <Field label="Reward points per panelist" error={show('rewardPoints')}>
+              <PointsInput value={rewardPoints} placeholder="e.g. 100" onValueChange={setRewardPoints} />
             </Field>
             <div className="flex min-h-9 items-center justify-start text-sm text-muted-foreground sm:justify-end sm:pt-6">
-              <span className="tabular rounded-md bg-muted px-2.5 py-1">
-                <span className="font-medium text-foreground">{selected.size}</span> selected ·{' '}
-                {formatNumber(summary.totalRewardPoints)} pts max
+              <span className="tabular-nums">
+                {selected.size} selected · {formatNumber(summary.totalRewardPoints)} pts total
               </span>
             </div>
-            <Field label="Remark (optional)" htmlFor="assign-remark" className="sm:col-span-2">
+            <Field label="Remark (optional)" className="sm:col-span-2">
               <Textarea
-                id="assign-remark"
-                rows={2}
                 value={remark}
                 placeholder="Internal note for this assignment"
                 onChange={(event) => setRemark(event.target.value)}
@@ -228,12 +221,12 @@ function AssignPanelistsForm({
             <ErrorState message={getErrorMessage(list.error)} onRetry={() => list.refetch()} />
           ) : rows.length === 0 ? (
             <EmptyState
-              title="No eligible panelists found"
-              description="Only active, verified panelists are listed. You can verify a panelist from their profile."
+              title="No eligible panelists found."
+              description="Only verified, active panelists can be assigned. You can verify a panelist from their profile."
             />
           ) : (
-            <div className="overflow-hidden rounded-lg border">
-              <div className="flex items-center gap-3 border-b bg-muted/50 px-4 py-2 text-sm">
+            <div className="overflow-hidden rounded-2xl border">
+              <div className="flex items-center gap-3 border-b bg-secondary/40 px-4 py-2 text-sm">
                 <Checkbox
                   checked={allOnPageSelected}
                   onCheckedChange={(value) => togglePage(value === true)}
@@ -245,7 +238,7 @@ function AssignPanelistsForm({
                 {rows.map((panelist) => {
                   const name = fullName(panelist.firstName, panelist.lastName) || panelist.email
                   return (
-                    <label key={panelist.id} className="flex cursor-pointer items-start gap-3 px-4 py-3 text-sm hover:bg-muted/40">
+                    <label key={panelist.id} className="flex items-start gap-3 px-4 py-3 text-sm">
                       <Checkbox
                         checked={selected.has(panelist.id)}
                         onCheckedChange={(value) =>
@@ -272,7 +265,7 @@ function AssignPanelistsForm({
                   return (
                     <label
                       key={panelist.id}
-                      className="flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-muted/40 has-[[data-state=checked]]:bg-primary/[0.06]"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-secondary/40"
                     >
                       <Checkbox
                         checked={selected.has(panelist.id)}
@@ -283,14 +276,14 @@ function AssignPanelistsForm({
                       <span className="min-w-0 flex-1 font-medium">{name}</span>
                       <span className="hidden text-muted-foreground sm:inline">ID {panelist.id}</span>
                       <span className="truncate text-xs text-muted-foreground">{panelist.email}</span>
-                      <span className="hidden items-center gap-1 lg:flex">
+                      <span className="hidden lg:flex items-center gap-1">
                         <VerificationBadge verified={panelist.isVerified} />
                       </span>
                     </label>
                   )
                 })}
               </div>
-              <div className="border-t px-3">
+              <div className="px-3">
                 <PaginationBar
                   page={list.data?.page ?? page}
                   pageSize={list.data?.pageSize ?? 8}
@@ -303,13 +296,12 @@ function AssignPanelistsForm({
         </div>
       ) : (
         <div className="space-y-4 text-sm">
-          <div className="grid gap-3 rounded-lg border bg-surface/50 p-4 sm:grid-cols-2">
+          <div className="grid gap-3 rounded-2xl border bg-secondary/30 p-4 sm:grid-cols-2">
             <p className="sm:col-span-2">
-              <span className="text-muted-foreground">Survey:</span> {summary.surveyName}
+              <span className="text-muted-foreground">Survey / project:</span> {summary.surveyName}
             </p>
             <p className="sm:col-span-2 break-all">
-              <span className="text-muted-foreground">Survey URL:</span>{' '}
-              <span className="font-mono text-xs">{summary.surveyUrl}</span>
+              <span className="text-muted-foreground">Survey URL:</span> {summary.surveyUrl}
             </p>
             <p>
               <span className="text-muted-foreground">Selected panelists:</span> {summary.panelistCount}
@@ -319,7 +311,7 @@ function AssignPanelistsForm({
               {formatNumber(summary.rewardPointsPerPanelist)}
             </p>
             <p>
-              <span className="text-muted-foreground">Maximum total points:</span>{' '}
+              <span className="text-muted-foreground">Total potential points:</span>{' '}
               {formatNumber(summary.totalRewardPoints)}
             </p>
             {summary.remark ? (
@@ -328,7 +320,7 @@ function AssignPanelistsForm({
               </p>
             ) : null}
           </div>
-          <ScrollArea className="h-48 rounded-lg border">
+          <ScrollArea className="h-48 rounded-2xl border">
             <ul className="divide-y">
               {summary.panelists.map((panelist) => (
                 <li key={panelist.id} className="px-4 py-2.5">
@@ -359,7 +351,7 @@ function AssignPanelistsForm({
           </Button>
         ) : (
           <Button onClick={submit} disabled={pending || !canReview}>
-            {pending ? 'Assigning…' : `Assign to ${summary.panelistCount} panelist${summary.panelistCount === 1 ? '' : 's'}`}
+            {pending ? 'Assigning…' : 'Assign panelists'}
           </Button>
         )}
       </DialogFooter>

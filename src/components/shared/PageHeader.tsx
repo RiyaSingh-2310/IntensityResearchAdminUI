@@ -27,9 +27,9 @@ export function PageHeader({
 }) {
   return (
     <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div className="min-w-0 space-y-2">
+      <div className="space-y-2">
         <Breadcrumb>
-          <BreadcrumbList className="text-xs">
+          <BreadcrumbList>
             {crumbs.map((crumb, index) => (
               <Fragment key={`${crumb.label}-${index}`}>
                 {index > 0 ? <BreadcrumbSeparator /> : null}
@@ -39,21 +39,21 @@ export function PageHeader({
                       <Link to={crumb.to}>{crumb.label}</Link>
                     </BreadcrumbLink>
                   ) : (
-                    <BreadcrumbPage className="max-w-[16rem] truncate">{crumb.label}</BreadcrumbPage>
+                    <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
                   )}
                 </BreadcrumbItem>
               </Fragment>
             ))}
           </BreadcrumbList>
         </Breadcrumb>
-        <div className="min-w-0">
-          <h1 className="font-display truncate text-2xl font-bold sm:text-[1.85rem]">{title}</h1>
+        <div>
+          <h1 className="font-display text-3xl tracking-tight">{title}</h1>
           {description ? (
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{description}</p>
           ) : null}
         </div>
       </div>
-      {actions ? <div className="flex shrink-0 flex-wrap gap-2">{actions}</div> : null}
+      {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
     </div>
   )
 }

@@ -12,7 +12,7 @@ export function GenderDistributionChart({
   description?: string
 }) {
   return (
-    <ChartCard title="Gender" description={description} loading={loading} empty={!data?.length}>
+    <ChartCard title="Gender distribution" description={description} loading={loading} empty={!data?.length}>
       <AdminDonut data={data ?? []} />
     </ChartCard>
   )

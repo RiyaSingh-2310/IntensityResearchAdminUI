@@ -34,6 +34,14 @@ export function RewardHistoryPage() {
   const types = useRewardTypes()
   const panelists = usePanelistOptions()
   const exportCsv = useExportRewardHistory(query)
+  const filtered = Boolean(
+    query.search ||
+      query.panelistId ||
+      query.dateFrom ||
+      query.dateTo ||
+      (query.status && query.status !== 'all') ||
+      (query.rewardType && query.rewardType !== 'all'),
+  )
   const [filterOpen, setFilterOpen] = useState(false)
   const rows = list.data?.data ?? []
 
@@ -110,7 +118,7 @@ export function RewardHistoryPage() {
     <div>
       <PageHeader
         title="Reward History"
-        description="Every payout request and its outcome, with CSV export of the filtered view."
+        description="Every approved, rejected, and pending redemption in one ledger."
         crumbs={[{ label: 'Admin', to: '/admin/dashboard' }, { label: 'Reward History' }]}
         actions={
           <Button variant="outline" onClick={() => exportCsv.mutate()} disabled={exportCsv.isPending || !list.data?.total}>
@@ -130,7 +138,7 @@ export function RewardHistoryPage() {
                   setSearch(value)
                   setFilters((current) => ({ ...current, page: 1 }))
                 }}
-                placeholder="Search request ID, panelist, email or method"
+                placeholder="Search panelist, reward, or request ID"
                 searching={search !== query.search}
               />
             }
@@ -143,28 +151,27 @@ export function RewardHistoryPage() {
         loading={list.isLoading}
         error={list.isError ? getErrorMessage(list.error) : undefined}
         onRetry={() => list.refetch()}
-        emptyTitle="No reward history found"
-        emptyDescription="Adjust the filters or date range to see more records."
+        emptyTitle="No reward history found."
+        emptyDescription={filtered ? 'Try a different search or clear the current filters.' : undefined}
         page={list.data?.page}
         pageSize={list.data?.pageSize}
         total={list.data?.total ?? 0}
         onPageChange={setPage}
       >
-        <div className="divide-y md:hidden">
+        <div className="space-y-3 p-4 md:hidden">
           {rows.map((item) => (
-            <div key={item.id} className="px-4 py-3.5">
+            <div key={item.id} className="rounded-2xl border px-4 py-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate font-medium">{item.panelistName}</p>
-                  <p className="truncate text-xs text-muted-foreground">{item.panelistEmail || item.requestId}</p>
+                  <p className="font-medium">{item.panelistName}</p>
+                  <p className="text-xs text-muted-foreground">{paymentMethodLabel(item.rewardName)}</p>
                 </div>
                 <RequestStatusBadge status={item.status} />
               </div>
-              <p className="tabular mt-1.5 text-xs text-muted-foreground">
-                {formatNumber(item.points)} pts · {paymentMethodLabel(item.rewardName)} ·{' '}
-                {formatDateTime(item.transactionDate)}
+              <p className="mt-2 text-xs text-muted-foreground">
+                {formatDateTime(item.transactionDate)} · {formatNumber(item.points)} pts · {item.requestId}
               </p>
-              {item.comment ? <p className="mt-1 text-xs text-muted-foreground">“{item.comment}”</p> : null}
+              {item.comment ? <p className="mt-1 text-xs text-muted-foreground">{item.comment}</p> : null}
             </div>
           ))}
         </div>
@@ -172,21 +179,14 @@ export function RewardHistoryPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Request</TableHead>
                 <TableHead>Panelist</TableHead>
-                <TableHead>Method</TableHead>
+                <TableHead>Reward</TableHead>
                 <TableHead>
-                  <SortableHeader
-                    label="Points"
-                    column="points"
-                    sortBy={filters.sortBy}
-                    sortDir={filters.sortDir}
-                    onSort={sort}
-                  />
+                  <SortableHeader label="Points" column="points" sortBy={filters.sortBy} sortDir={filters.sortDir} onSort={sort} />
                 </TableHead>
                 <TableHead>
                   <SortableHeader
-                    label="Requested"
+                    label="Transaction date"
                     column="transactionDate"
                     sortBy={filters.sortBy}
                     sortDir={filters.sortDir}
@@ -195,27 +195,24 @@ export function RewardHistoryPage() {
                 </TableHead>
                 <TableHead>Actioned</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Request ID</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell className="font-mono text-xs text-muted-foreground">{item.requestId}</TableCell>
                   <TableCell>
                     <p className="font-medium">{item.panelistName}</p>
-                    {item.panelistEmail ? (
-                      <p className="text-xs text-muted-foreground">{item.panelistEmail}</p>
-                    ) : null}
+                    {item.panelistEmail ? <p className="text-xs text-muted-foreground">{item.panelistEmail}</p> : null}
                   </TableCell>
                   <TableCell>{paymentMethodLabel(item.rewardName)}</TableCell>
-                  <TableCell className="font-medium">{formatNumber(item.points)}</TableCell>
-                  <TableCell className="text-muted-foreground">{formatDateTime(item.transactionDate)}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {item.actionDate ? formatDateTime(item.actionDate) : '—'}
-                  </TableCell>
+                  <TableCell>{formatNumber(item.points)}</TableCell>
+                  <TableCell>{formatDateTime(item.transactionDate)}</TableCell>
+                  <TableCell>{item.actionDate ? formatDateTime(item.actionDate) : '—'}</TableCell>
                   <TableCell>
                     <RequestStatusBadge status={item.status} />
                   </TableCell>
+                  <TableCell>{item.requestId}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -20,7 +20,7 @@ export function FilterToolbar({
 }) {
   return (
     <>
-      <div className="flex flex-col gap-3 border-b bg-surface/40 px-4 py-4">
+      <div className="flex flex-col gap-3 border-b px-4 py-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="min-w-0 flex-1">{search}</div>
           <div className="flex shrink-0 flex-wrap gap-2">
@@ -30,7 +30,7 @@ export function FilterToolbar({
                 Filters
               </Button>
             ) : null}
-            <Button variant="ghost" className="text-muted-foreground" onClick={onClear}>
+            <Button variant="outline" onClick={onClear}>
               Clear filters
             </Button>
             {children}
@@ -42,7 +42,7 @@ export function FilterToolbar({
         <Sheet open={mobileOpen} onOpenChange={onMobileOpenChange}>
           <SheetContent>
             <SheetHeader>
-              <SheetTitle className="font-display">Filters</SheetTitle>
+              <SheetTitle>Filters</SheetTitle>
             </SheetHeader>
             <div className="space-y-4 p-4">
               {renderFilters()}

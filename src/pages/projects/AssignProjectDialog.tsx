@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { Field } from '@/components/shared/Field'
 import { Button } from '@/components/ui/button'
 import {
@@ -70,10 +70,10 @@ function EditSurveyForm({
 }) {
   const [form, setForm] = useState(() => toForm(assignment))
   const [errors, setErrors] = useState<Record<string, string>>({})
+
   const credited = assignment.status === 'complete'
 
-  function submit(event: FormEvent) {
-    event.preventDefault()
+  function submit() {
     if (pending) return
     const next = {
       surveyName: validateSurveyName(form.surveyName) ?? '',
@@ -92,72 +92,52 @@ function EditSurveyForm({
 
   return (
     <DialogContent className="sm:max-w-xl">
-      <form onSubmit={submit} noValidate className="grid gap-5">
-        <DialogHeader>
-          <DialogTitle className="font-display">Edit assignment</DialogTitle>
-          <DialogDescription>
-            {assignment.panelistName} · Assignment #{assignment.id}. Use “Mark complete” from the table to credit
-            points.
-          </DialogDescription>
-        </DialogHeader>
-        <fieldset disabled={pending} className="grid gap-4">
-          <Field label="Survey name" htmlFor="edit-survey-name" error={errors.surveyName}>
-            <Input
-              id="edit-survey-name"
-              value={form.surveyName}
-              maxLength={SURVEY_NAME_MAX_LENGTH}
-              aria-invalid={Boolean(errors.surveyName)}
-              onChange={(event) =>
-                setForm({ ...form, surveyName: event.target.value.slice(0, SURVEY_NAME_MAX_LENGTH) })
-              }
-            />
-          </Field>
-          <Field
-            label="Survey URL"
-            htmlFor="edit-survey-url"
-            error={errors.surveyUrl}
-            hint="Include {panelist_id} where the survey vendor expects the panelist ID."
-          >
-            <Input
-              id="edit-survey-url"
-              type="url"
-              value={form.surveyUrl}
-              aria-invalid={Boolean(errors.surveyUrl)}
-              onChange={(event) => setForm({ ...form, surveyUrl: event.target.value })}
-            />
-          </Field>
-          <Field
-            label="Reward points"
-            htmlFor="edit-survey-points"
-            error={errors.rewardPoints}
-            hint={credited ? 'Locked — these points were already credited when the survey was completed.' : undefined}
-          >
-            <PointsInput
-              id="edit-survey-points"
-              value={form.rewardPoints}
-              disabled={credited}
-              aria-invalid={Boolean(errors.rewardPoints)}
-              onValueChange={(value) => setForm({ ...form, rewardPoints: value })}
-            />
-          </Field>
-          <Field label="Remark (optional)" htmlFor="edit-survey-remark">
-            <Textarea
-              id="edit-survey-remark"
-              value={form.remark}
-              rows={3}
-              onChange={(event) => setForm({ ...form, remark: event.target.value })}
-            />
-          </Field>
-        </fieldset>
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={pending}>
-            {pending ? 'Saving…' : 'Save changes'}
-          </Button>
-        </DialogFooter>
-      </form>
+      <DialogHeader>
+        <DialogTitle>Edit assignment</DialogTitle>
+        <DialogDescription>
+          Update the survey name, URL, points, or remark. Use Mark completed to credit reward points.
+        </DialogDescription>
+      </DialogHeader>
+      <div className="grid gap-3">
+        <Field label="Survey / project name" error={errors.surveyName}>
+          <Input
+            value={form.surveyName}
+            maxLength={SURVEY_NAME_MAX_LENGTH}
+            onChange={(event) =>
+              setForm({ ...form, surveyName: event.target.value.slice(0, SURVEY_NAME_MAX_LENGTH) })
+            }
+          />
+        </Field>
+        <Field
+          label="Survey URL"
+          error={errors.surveyUrl}
+          hint="Use {panelist_id} in the URL if the survey vendor should receive the panelist id."
+        >
+          <Input value={form.surveyUrl} onChange={(event) => setForm({ ...form, surveyUrl: event.target.value })} />
+        </Field>
+        <Field
+          label="Reward points"
+          error={errors.rewardPoints}
+          hint={credited ? 'Locked — these points were already credited when the survey was completed.' : undefined}
+        >
+          <PointsInput
+            value={form.rewardPoints}
+            disabled={credited}
+            onValueChange={(value) => setForm({ ...form, rewardPoints: value })}
+          />
+        </Field>
+        <Field label="Remark (optional)">
+          <Textarea value={form.remark} onChange={(event) => setForm({ ...form, remark: event.target.value })} />
+        </Field>
+      </div>
+      <DialogFooter>
+        <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
+          Cancel
+        </Button>
+        <Button onClick={submit} disabled={pending}>
+          {pending ? 'Saving…' : 'Save assignment'}
+        </Button>
+      </DialogFooter>
     </DialogContent>
   )
 }

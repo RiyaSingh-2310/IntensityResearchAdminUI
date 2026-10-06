@@ -4,20 +4,23 @@ import { cn } from '@/lib/utils'
 import type { AssignmentStatus, PanelistStatus, RewardRequestStatus } from '@/types'
 
 const tones = {
-  success: 'bg-success-foreground text-success ring-success/25',
-  warning: 'bg-warning-foreground text-warning ring-warning/25',
-  danger: 'bg-destructive/12 text-destructive ring-destructive/25',
-  info: 'bg-info-foreground text-info ring-info/25',
-  teal: 'bg-highlight-foreground text-highlight ring-highlight/25',
-  muted: 'bg-muted text-muted-foreground ring-border',
+  success: 'border-transparent bg-success-foreground text-success',
+  warning: 'border-transparent bg-warning-foreground text-warning',
+  danger: 'border-transparent bg-destructive/10 text-destructive',
+  info: 'border-transparent bg-info-foreground text-info',
+  muted: 'border-transparent bg-muted text-muted-foreground',
+  teal: 'border-transparent bg-accent text-teal-foreground',
 } as const
 
-type Tone = keyof typeof tones
-
-export function ToneBadge({ tone, children }: { tone: Tone; children: string }) {
+export function ToneBadge({
+  tone,
+  children,
+}: {
+  tone: keyof typeof tones
+  children: string
+}) {
   return (
-    <Badge variant="outline" className={cn('gap-1.5 border-transparent font-medium ring-1 ring-inset', tones[tone])}>
-      <span className="size-1.5 rounded-full bg-current" aria-hidden />
+    <Badge variant="outline" className={cn('font-medium', tones[tone])}>
       {children}
     </Badge>
   )
@@ -29,11 +32,11 @@ export function PanelistStatusBadge({ status }: { status: PanelistStatus }) {
 }
 
 export function VerificationBadge({ verified }: { verified: boolean }) {
-  return <ToneBadge tone={verified ? 'info' : 'warning'}>{verified ? 'Verified' : 'Unverified'}</ToneBadge>
+  return <ToneBadge tone={verified ? 'success' : 'warning'}>{verified ? 'Verified' : 'Unverified'}</ToneBadge>
 }
 
 export function AssignmentStatusBadge({ status }: { status: AssignmentStatus }) {
-  const tone: Tone =
+  const tone =
     status === 'complete'
       ? 'success'
       : status === 'terminate'
@@ -50,6 +53,6 @@ export function SurveyRewardBadge({ status }: { status: AssignmentStatus }) {
 }
 
 export function RequestStatusBadge({ status }: { status: RewardRequestStatus }) {
-  const tone: Tone = status === 'approved' ? 'success' : status === 'rejected' ? 'danger' : 'warning'
+  const tone = status === 'approved' ? 'success' : status === 'rejected' ? 'danger' : 'warning'
   return <ToneBadge tone={tone}>{REQUEST_STATUS_LABELS[status]}</ToneBadge>
 }

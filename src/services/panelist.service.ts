@@ -89,7 +89,7 @@ export const panelistService = {
     const requests = (requestData.requests ?? []).map(mapRewardRequest)
     return mapPanelistDetail(detail.panelist, detail.answers ?? [], requests, assignments)
   },
-  async update(id: string, input: UpdatePanelistInput): Promise<PanelistDetail> {
+  async update(id: string, input: UpdatePanelistInput): Promise<void> {
     await apiRequest(`/admin/panelists/${id}`, {
       method: 'PUT',
       body: {
@@ -99,21 +99,18 @@ export const panelistService = {
         is_verified: input.isVerified ? 1 : 0,
       },
     })
-    return panelistService.get(id)
   },
   async activate(id: string) {
     await apiRequest(`/admin/panelists/${id}`, {
       method: 'PUT',
       body: { status: 'active' },
     })
-    return panelistService.get(id)
   },
   async deactivate(id: string) {
     await apiRequest(`/admin/panelists/${id}`, {
       method: 'PUT',
       body: { status: 'inactive' },
     })
-    return panelistService.get(id)
   },
   async credit(id: string, points: number, remark?: string) {
     if (!Number.isInteger(points) || points <= 0) {
@@ -128,7 +125,6 @@ export const panelistService = {
         reward_type: 'manual',
       },
     })
-    return panelistService.get(id)
   },
 }
 

@@ -18,13 +18,21 @@ export function ProtectedRoute() {
   const { user, ready } = useAuth()
   const location = useLocation()
   if (!ready) return <AuthBoot />
-  if (!user) return <Navigate to="/admin/login" replace state={{ from: location.pathname }} />
+  if (!user) return <Navigate to="/admin/login" replace state={{ from: `${location.pathname}${location.search}` }} />
   return <Outlet />
+}
+
+function returnPath(state: unknown) {
+  const from = (state as { from?: unknown } | null)?.from
+  if (typeof from !== 'string' || !from.startsWith('/admin/') || from.startsWith('//')) return '/admin/dashboard'
+  if (from === '/admin/login' || from === '/admin/forgot-password') return '/admin/dashboard'
+  return from
 }
 
 export function GuestRoute() {
   const { user, ready } = useAuth()
+  const location = useLocation()
   if (!ready) return <AuthBoot />
-  if (user) return <Navigate to="/admin/dashboard" replace />
+  if (user) return <Navigate to={returnPath(location.state)} replace />
   return <Outlet />
 }

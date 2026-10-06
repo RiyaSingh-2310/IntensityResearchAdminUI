@@ -34,11 +34,11 @@ export default defineConfig({
   },
   base: '/admin/',
   server: {
-    port: 5176,
+    port: 5174,
     strictPort: false,
   },
   preview: {
-    port: 4176,
+    port: 4174,
     strictPort: false,
   },
 })

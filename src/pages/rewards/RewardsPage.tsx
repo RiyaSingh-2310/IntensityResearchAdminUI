@@ -1,22 +1,23 @@
-import { CreditCard, Gift, Info, Settings2, Sparkles } from 'lucide-react'
+import { Settings2 } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { KpiCard } from '@/components/shared/KpiCard'
+import { DataTable } from '@/components/common/DataTable'
+import { FilterToolbar } from '@/components/common/FilterToolbar'
+import { SearchField } from '@/components/common/SearchField'
 import { PageHeader } from '@/components/shared/PageHeader'
-import { EmptyState, ErrorState, LoadingSkeleton } from '@/components/shared/PageState'
 import { ToneBadge } from '@/components/shared/StatusBadge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useRewardMethods } from '@/hooks/useRewards'
 import { useSettings } from '@/hooks/useSettings'
 import { getErrorMessage } from '@/lib/errors'
 import { formatNumber } from '@/lib/format'
 import type { AdminSettings } from '@/types'
 
-const PAYOUT_TOGGLES: { key: keyof AdminSettings; label: string }[] = [
-  { key: 'amazonEnabled', label: 'Amazon' },
-  { key: 'flipkartEnabled', label: 'Flipkart' },
-  { key: 'paypalEnabled', label: 'PayPal' },
+const PAYOUT_TOGGLES: { match: string; key: keyof AdminSettings }[] = [
+  { match: 'amazon', key: 'amazonEnabled' },
+  { match: 'flipkart', key: 'flipkartEnabled' },
+  { match: 'paypal', key: 'paypalEnabled' },
 ]
 
 function methodInitials(label: string) {
@@ -34,16 +35,32 @@ function methodInitials(label: string) {
 export function RewardsPage() {
   const methods = useRewardMethods()
   const settings = useSettings()
-  const rows = methods.data ?? []
+  const [search, setSearch] = useState('')
+  const [filterOpen, setFilterOpen] = useState(false)
+
+  const rows = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    const all = methods.data ?? []
+    if (!term) return all
+    return all.filter((method) => `${method.label} ${method.name}`.toLowerCase().includes(term))
+  }, [methods.data, search])
+
+  function toggleFor(name: string) {
+    const toggle = PAYOUT_TOGGLES.find((item) => name.toLowerCase().includes(item.match))
+    if (!toggle || !settings.data) return undefined
+    return Boolean(settings.data[toggle.key])
+  }
+
+  const minimum = settings.data ? `${formatNumber(settings.data.minimumPayout)} pts` : '—'
 
   return (
     <div>
       <PageHeader
-        title="Reward Methods"
-        description="Payout methods panelists can currently redeem points through, as published by the Intensity API."
-        crumbs={[{ label: 'Admin', to: '/admin/dashboard' }, { label: 'Reward Methods' }]}
+        title="Rewards"
+        description="Payout methods panelists can redeem points through. Availability comes from the backend."
+        crumbs={[{ label: 'Admin', to: '/admin/dashboard' }, { label: 'Rewards' }]}
         actions={
-          <Button asChild variant="outline">
+          <Button asChild>
             <Link to="/admin/settings">
               <Settings2 className="size-4" />
               Payout settings
@@ -52,112 +69,84 @@ export function RewardsPage() {
         }
       />
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        {methods.isLoading || settings.isLoading ? (
-          Array.from({ length: 3 }).map((_, index) => <Skeleton key={index} className="h-[7.5rem] rounded-xl" />)
-        ) : (
-          <>
-            <KpiCard
-              label="Methods offered"
-              value={methods.isError ? '—' : formatNumber(rows.length)}
-              hint="Returned by GET /settings"
-              icon={CreditCard}
-            />
-            <KpiCard
-              label="Minimum payout"
-              value={settings.data ? `${formatNumber(settings.data.minimumPayout)} pts` : '—'}
-              hint="Smallest redeemable balance"
-              icon={Gift}
-              tone="cyan"
-            />
-            <KpiCard
-              label="Registration bonus"
-              value={settings.data ? `${formatNumber(settings.data.registrationRewardPoints)} pts` : '—'}
-              hint="Credited on sign-up"
-              icon={Sparkles}
-              tone="teal"
-            />
-          </>
-        )}
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-display text-base font-semibold">Available payout methods</CardTitle>
-            <CardDescription>Panelists choose one of these when they submit a redemption request.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {methods.isLoading ? (
-              <LoadingSkeleton rows={4} />
-            ) : methods.isError ? (
-              <ErrorState message={getErrorMessage(methods.error)} onRetry={() => methods.refetch()} />
-            ) : rows.length === 0 ? (
-              <EmptyState
-                title="No payout methods published"
-                description="The API did not return any payment methods. Check the payout toggles in Settings."
-              />
-            ) : (
-              <ul className="grid gap-3 sm:grid-cols-2">
-                {rows.map((method) => (
-                  <li
-                    key={method.id}
-                    className="flex items-center gap-3 rounded-lg border bg-surface/50 px-4 py-3 transition-colors hover:border-primary/30"
-                  >
-                    <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary/12 text-sm font-semibold text-primary ring-1 ring-primary/20 ring-inset">
-                      {methodInitials(method.label)}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">{method.label}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        API value <span className="font-mono">{method.name}</span>
-                      </p>
-                    </div>
-                    <ToneBadge tone="success">Offered</ToneBadge>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-display text-base font-semibold">Payout toggles</CardTitle>
-              <CardDescription>Current values from admin settings.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {settings.isLoading ? (
-                <LoadingSkeleton rows={3} />
-              ) : settings.isError ? (
-                <ErrorState message={getErrorMessage(settings.error)} onRetry={() => settings.refetch()} />
-              ) : (
-                <ul className="divide-y">
-                  {PAYOUT_TOGGLES.map((toggle) => {
-                    const enabled = Boolean(settings.data?.[toggle.key])
-                    return (
-                      <li key={toggle.key} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
-                        <span className="text-sm font-medium">{toggle.label}</span>
-                        <ToneBadge tone={enabled ? 'success' : 'muted'}>{enabled ? 'Enabled' : 'Disabled'}</ToneBadge>
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-
-          <div className="flex gap-3 rounded-xl border border-info/25 bg-info-foreground/60 p-4 text-sm">
-            <Info className="mt-0.5 size-4 shrink-0 text-info" />
-            <p className="leading-6 text-muted-foreground">
-              The Intensity API has no rewards catalog endpoint, so methods can't be created, renamed or removed here.
-              Use <span className="font-medium text-foreground">Settings</span> to enable or disable Amazon, Flipkart and
-              PayPal payouts.
-            </p>
-          </div>
+      <DataTable
+        toolbar={
+          <FilterToolbar
+            search={<SearchField value={search} onChange={setSearch} placeholder="Search rewards" />}
+            mobileOpen={filterOpen}
+            onMobileOpenChange={setFilterOpen}
+            onClear={() => setSearch('')}
+          />
+        }
+        loading={methods.isLoading}
+        error={methods.isError ? getErrorMessage(methods.error) : undefined}
+        onRetry={() => methods.refetch()}
+        emptyTitle="No payout methods available."
+        emptyDescription="The API did not return any payout methods. Payout toggles are managed in Settings, and panelist payouts appear under Reward Requests."
+        total={rows.length}
+      >
+        <div className="space-y-3 p-4 md:hidden">
+          {rows.map((method) => {
+            const enabled = toggleFor(method.name)
+            return (
+              <div key={method.id} className="rounded-2xl border px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium">{method.label}</p>
+                    <p className="text-xs text-muted-foreground">{method.name}</p>
+                  </div>
+                  {enabled === undefined ? null : (
+                    <ToneBadge tone={enabled ? 'success' : 'muted'}>{enabled ? 'Enabled' : 'Disabled'}</ToneBadge>
+                  )}
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">Minimum payout · {minimum}</p>
+              </div>
+            )
+          })}
         </div>
-      </div>
+        <div className="hidden md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Reward</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Minimum points</TableHead>
+                <TableHead>Availability</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((method) => {
+                const enabled = toggleFor(method.name)
+                return (
+                  <TableRow key={method.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <span className="grid size-9 place-items-center rounded-xl bg-secondary text-xs font-semibold text-primary">
+                          {methodInitials(method.label)}
+                        </span>
+                        <p className="font-medium">{method.label}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>Payout</TableCell>
+                    <TableCell>{minimum}</TableCell>
+                    <TableCell>
+                      <ToneBadge tone="success">Offered</ToneBadge>
+                    </TableCell>
+                    <TableCell>
+                      {enabled === undefined ? (
+                        '—'
+                      ) : (
+                        <ToneBadge tone={enabled ? 'success' : 'muted'}>{enabled ? 'Enabled' : 'Disabled'}</ToneBadge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </DataTable>
     </div>
   )
 }

@@ -96,6 +96,15 @@ export function paymentMethodLabel(name: string) {
   return PAYMENT_METHOD_DISPLAY[key] ?? name.trim()
 }
 
+export function roleLabel(role?: string | null) {
+  if (!role) return 'Administrator'
+  return role
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
+}
+
 export function fullName(firstName: string, lastName: string) {
   return [firstName, lastName].filter(Boolean).join(' ')
 }

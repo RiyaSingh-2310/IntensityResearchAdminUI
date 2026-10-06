@@ -1,4 +1,3 @@
-import { Eye, Info, Pencil, Power, PowerOff } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { DataTable } from '@/components/common/DataTable'
@@ -12,7 +11,7 @@ import { SortableHeader } from '@/components/shared/SortableHeader'
 import { PanelistStatusBadge, VerificationBadge } from '@/components/shared/StatusBadge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import {
   useActivatePanelist,
   useDeactivatePanelist,
@@ -132,40 +131,11 @@ export function PanelistsPage() {
   const rows = list.data?.data ?? []
   const statusPending = activate.isPending || deactivate.isPending
 
-  function actions(panelist: Panelist) {
-    return (
-      <RowActions>
-        <DropdownMenuItem asChild>
-          <Link to={`/admin/panelists/${panelist.id}`}>
-            <Eye className="size-4" />
-            View profile
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setEditing(panelist)}>
-          <Pencil className="size-4" />
-          Edit
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        {panelist.status === 'active' ? (
-          <DropdownMenuItem variant="destructive" disabled={statusPending} onClick={() => setDeactivating(panelist)}>
-            <PowerOff className="size-4" />
-            Deactivate
-          </DropdownMenuItem>
-        ) : (
-          <DropdownMenuItem disabled={statusPending} onClick={() => activate.mutate(panelist.id)}>
-            <Power className="size-4" />
-            Activate
-          </DropdownMenuItem>
-        )}
-      </RowActions>
-    )
-  }
-
   return (
     <div>
       <PageHeader
         title="Panelists"
-        description="Search, filter and manage panel members, their verification and account status."
+        description="Search, filter, and manage the research panel."
         crumbs={[{ label: 'Admin', to: '/admin/dashboard' }, { label: 'Panelists' }]}
       />
 
@@ -192,7 +162,7 @@ export function PanelistsPage() {
         loading={list.isLoading}
         error={list.isError ? getErrorMessage(list.error) : undefined}
         onRetry={() => list.refetch()}
-        emptyTitle="No panelists found"
+        emptyTitle="No panelists found."
         emptyDescription="Try a different search or clear the current filters."
         page={list.data?.page}
         pageSize={list.data?.pageSize}
@@ -200,28 +170,26 @@ export function PanelistsPage() {
         onPageChange={setPage}
       >
         {list.data?.notice ? (
-          <div className="flex gap-2.5 border-b bg-info-foreground/50 px-4 py-2.5 text-xs leading-5 text-muted-foreground">
-            <Info className="mt-0.5 size-3.5 shrink-0 text-info" />
-            {list.data.notice}
-          </div>
+          <p className="border-b px-4 py-3 text-xs text-muted-foreground">{list.data.notice}</p>
         ) : null}
-        <div className="divide-y md:hidden">
+        <div className="space-y-3 p-4 md:hidden">
           {rows.map((panelist) => (
-            <div key={panelist.id} className="flex items-start gap-3 px-4 py-3.5">
-              <div className="min-w-0 flex-1">
-                <Link to={`/admin/panelists/${panelist.id}`} className="block truncate font-medium hover:text-primary">
-                  {fullName(panelist.firstName, panelist.lastName) || panelist.email}
-                </Link>
-                <p className="truncate text-xs text-muted-foreground">{panelist.email}</p>
-                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <div key={panelist.id} className="rounded-2xl border px-4 py-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <Link to={`/admin/panelists/${panelist.id}`} className="font-medium hover:text-primary">
+                    {fullName(panelist.firstName, panelist.lastName) || panelist.email}
+                  </Link>
+                  <p className="truncate text-xs text-muted-foreground">{panelist.email}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1">
                   <PanelistStatusBadge status={panelist.status} />
                   <VerificationBadge verified={panelist.isVerified} />
                 </div>
-                <p className="tabular mt-2 text-xs text-muted-foreground">
-                  Joined {formatDate(panelist.registeredAt)} · {formatNumber(panelist.rewardPoints)} pts
-                </p>
               </div>
-              {actions(panelist)}
+              <p className="mt-2 text-xs text-muted-foreground">
+                {formatDate(panelist.registeredAt)} · {formatNumber(panelist.rewardPoints)} pts
+              </p>
             </div>
           ))}
         </div>
@@ -230,59 +198,70 @@ export function PanelistsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>
-                  <SortableHeader label="Panelist" column="lastName" sortBy={filters.sortBy} sortDir={filters.sortDir} onSort={sort} />
+                  <SortableHeader label="Name" column="lastName" sortBy={filters.sortBy} sortDir={filters.sortDir} onSort={sort} />
                 </TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead>Gender</TableHead>
-                <TableHead>Age</TableHead>
+                <TableHead>Age Range</TableHead>
                 <TableHead>
                   <SortableHeader
-                    label="Registered"
+                    label="Registration Date"
                     column="registeredAt"
                     sortBy={filters.sortBy}
                     sortDir={filters.sortDir}
                     onSort={sort}
                   />
                 </TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Account status</TableHead>
                 <TableHead>Verification</TableHead>
                 <TableHead>
                   <SortableHeader
-                    label="Points"
+                    label="Reward Points"
                     column="rewardPoints"
                     sortBy={filters.sortBy}
                     sortDir={filters.sortDir}
                     onSort={sort}
                   />
                 </TableHead>
-                <TableHead className="w-12 text-right">
-                  <span className="sr-only">Actions</span>
-                </TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.map((panelist) => (
                 <TableRow key={panelist.id}>
-                  <TableCell>
-                    <Link to={`/admin/panelists/${panelist.id}`} className="font-medium hover:text-primary">
+                  <TableCell className="font-medium">
+                    <Link to={`/admin/panelists/${panelist.id}`} className="hover:text-primary">
                       {fullName(panelist.firstName, panelist.lastName) || '—'}
                     </Link>
-                    <p className="text-xs text-muted-foreground">{panelist.email}</p>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {panelist.gender ? GENDER_LABELS[panelist.gender] : '—'}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {panelist.ageRange ? AGE_RANGE_LABELS[panelist.ageRange] : '—'}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{formatDate(panelist.registeredAt)}</TableCell>
+                  <TableCell>{panelist.email}</TableCell>
+                  <TableCell>{panelist.gender ? GENDER_LABELS[panelist.gender] : '—'}</TableCell>
+                  <TableCell>{panelist.ageRange ? AGE_RANGE_LABELS[panelist.ageRange] : '—'}</TableCell>
+                  <TableCell>{formatDate(panelist.registeredAt)}</TableCell>
                   <TableCell>
                     <PanelistStatusBadge status={panelist.status} />
                   </TableCell>
                   <TableCell>
                     <VerificationBadge verified={panelist.isVerified} />
                   </TableCell>
-                  <TableCell className="font-medium">{formatNumber(panelist.rewardPoints)}</TableCell>
-                  <TableCell className="text-right">{actions(panelist)}</TableCell>
+                  <TableCell>{formatNumber(panelist.rewardPoints)}</TableCell>
+                  <TableCell className="text-right">
+                    <RowActions>
+                      <DropdownMenuItem asChild>
+                        <Link to={`/admin/panelists/${panelist.id}`}>View</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setEditing(panelist)}>Edit</DropdownMenuItem>
+                      {panelist.status === 'active' ? (
+                        <DropdownMenuItem disabled={statusPending} onClick={() => setDeactivating(panelist)}>
+                          Deactivate
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem disabled={statusPending} onClick={() => activate.mutate(panelist.id)}>
+                          Activate
+                        </DropdownMenuItem>
+                      )}
+                    </RowActions>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -302,7 +281,7 @@ export function PanelistsPage() {
         open={Boolean(deactivating)}
         onOpenChange={(open) => !open && !deactivate.isPending && setDeactivating(null)}
         title="Deactivate this panelist?"
-        description={`${deactivating ? fullName(deactivating.firstName, deactivating.lastName) || deactivating.email : 'This panelist'} will be marked inactive. You can reactivate them at any time.`}
+        description={`${deactivating ? fullName(deactivating.firstName, deactivating.lastName) || deactivating.email : 'This member'} will be marked inactive until reactivated.`}
         confirmLabel="Deactivate"
         destructive
         pending={deactivate.isPending}

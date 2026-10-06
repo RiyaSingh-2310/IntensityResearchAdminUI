@@ -475,7 +475,7 @@ function bucketKey(date: Date) {
 }
 
 function bucketLabel(date: Date, unit: 'day' | 'week' | 'month') {
-  if (unit === 'month') return `${MONTHS[date.getMonth()]} ${String(date.getFullYear()).slice(2)}`
+  if (unit === 'month') return `${MONTHS[date.getMonth()]} '${String(date.getFullYear()).slice(2)}`
   return `${MONTHS[date.getMonth()]} ${date.getDate()}`
 }
 

@@ -4,7 +4,7 @@ import type { ChartDatum } from '@/types'
 
 export function RewardStatusChart({ data, loading }: { data?: ChartDatum[]; loading?: boolean }) {
   return (
-    <ChartCard title="Request outcomes" description="Pending, approved and rejected requests." loading={loading} empty={!data?.length}>
+    <ChartCard title="Pending vs approved vs rejected" loading={loading} empty={!data?.length}>
       <AdminDonut data={data ?? []} />
     </ChartCard>
   )

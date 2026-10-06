@@ -1,23 +1,12 @@
-import { CheckCircle2, ExternalLink } from 'lucide-react'
-import type { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
-import { ErrorState, LoadingSkeleton } from '@/components/shared/PageState'
+import { ExternalLink } from 'lucide-react'
 import { AssignmentStatusBadge, SurveyRewardBadge } from '@/components/shared/StatusBadge'
+import { ErrorState, LoadingSkeleton } from '@/components/shared/PageState'
 import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useSurveyAssignment } from '@/hooks/useProjects'
 import { getErrorMessage } from '@/lib/errors'
-import { formatDateTime, formatNumber } from '@/lib/format'
+import { formatDate, formatDateTime, formatNumber } from '@/lib/format'
 import type { ProjectAssignment } from '@/types'
-
-function Row({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="grid grid-cols-[8rem_1fr] gap-3 py-2.5 text-sm">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 break-words">{children}</dd>
-    </div>
-  )
-}
 
 export function AssignmentDetailsSheet({
   assignmentId,
@@ -35,71 +24,103 @@ export function AssignmentDetailsSheet({
 
   return (
     <Sheet open={Boolean(assignmentId)} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-md">
-        <SheetHeader className="border-b">
-          <SheetTitle className="font-display pr-6">{assignment?.projectName ?? 'Assignment'}</SheetTitle>
-          <SheetDescription>{assignmentId ? `Assignment #${assignmentId}` : 'Survey assignment'}</SheetDescription>
+      <SheetContent className="overflow-y-auto sm:max-w-md">
+        <SheetHeader>
+          <SheetTitle>{assignment?.projectName ?? 'Assignment'}</SheetTitle>
         </SheetHeader>
-        <div className="flex-1 overflow-y-auto px-4">
-          {detail.isLoading ? (
-            <div className="py-4">
-              <LoadingSkeleton rows={6} />
-            </div>
-          ) : detail.isError ? (
-            <div className="py-4">
-              <ErrorState message={getErrorMessage(detail.error)} onRetry={() => detail.refetch()} />
-            </div>
-          ) : assignment ? (
-            <dl className="divide-y">
-              <Row label="Status">
-                <span className="flex flex-wrap gap-1.5">
-                  <AssignmentStatusBadge status={assignment.status} />
-                  <SurveyRewardBadge status={assignment.status} />
-                </span>
-              </Row>
-              <Row label="Panelist">
-                <Link
-                  to={`/admin/panelists/${assignment.panelistId}`}
-                  className="font-medium hover:text-primary"
-                  onClick={() => onOpenChange(false)}
+        {detail.isLoading ? (
+          <div className="p-4">
+            <LoadingSkeleton rows={6} />
+          </div>
+        ) : detail.isError ? (
+          <div className="p-4">
+            <ErrorState message={getErrorMessage(detail.error)} onRetry={() => detail.refetch()} />
+          </div>
+        ) : assignment ? (
+          <div className="space-y-3 p-4 text-sm">
+            <p>
+              <span className="text-muted-foreground">Survey ID:</span> {assignment.id}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Survey name:</span> {assignment.projectName}
+            </p>
+            <p className="break-all">
+              <span className="text-muted-foreground">Survey URL:</span> {assignment.surveyUrl}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Panelist:</span> {assignment.panelistName}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Panelist ID:</span> {assignment.panelistId}
+            </p>
+            {assignment.panelistEmail ? (
+              <p>
+                <span className="text-muted-foreground">Panelist email:</span> {assignment.panelistEmail}
+              </p>
+            ) : null}
+            <p>
+              <span className="text-muted-foreground">Assigned:</span> {formatDateTime(assignment.assignedAt)}
+            </p>
+            {assignment.completedAt ? (
+              <p>
+                <span className="text-muted-foreground">Completed:</span> {formatDateTime(assignment.completedAt)}
+              </p>
+            ) : null}
+            <p className="flex flex-wrap items-center gap-2">
+              <span className="text-muted-foreground">Status:</span>
+              <AssignmentStatusBadge status={assignment.status} />
+            </p>
+            <p className="flex flex-wrap items-center gap-2">
+              <span className="text-muted-foreground">Survey reward:</span>
+              <SurveyRewardBadge status={assignment.status} />
+            </p>
+            <p>
+              <span className="text-muted-foreground">Reward points:</span> {formatNumber(assignment.rewardPoints)}
+            </p>
+            {assignment.status === 'complete' ? (
+              <p className="text-xs text-muted-foreground">
+                Completing this assignment credits the survey reward once. Transaction details are stored by the
+                backend and are not returned on this assignment record.
+              </p>
+            ) : null}
+            {assignment.remark ? (
+              <p>
+                <span className="text-muted-foreground">Remark:</span> {assignment.remark}
+              </p>
+            ) : null}
+            {assignment.createdByName ? (
+              <p>
+                <span className="text-muted-foreground">Created by:</span> {assignment.createdByName}
+              </p>
+            ) : null}
+            {assignment.updatedByName ? (
+              <p>
+                <span className="text-muted-foreground">Updated by:</span> {assignment.updatedByName}
+              </p>
+            ) : null}
+            {assignment.updatedAt ? (
+              <p>
+                <span className="text-muted-foreground">Updated:</span> {formatDate(assignment.updatedAt)}
+              </p>
+            ) : null}
+            <div className="flex flex-wrap gap-2 pt-2">
+              {assignment.status === 'active' && assignment.surveyUrl ? (
+                <Button asChild variant="outline">
+                  <a href={assignment.surveyUrl} target="_blank" rel="noopener noreferrer">
+                    Open survey
+                    <ExternalLink className="size-4" />
+                  </a>
+                </Button>
+              ) : null}
+              {assignment.status === 'active' && onMarkComplete ? (
+                <Button
+                  disabled={completePending}
+                  onClick={() => !completePending && onMarkComplete(assignment)}
                 >
-                  {assignment.panelistName}
-                </Link>
-                <p className="text-xs text-muted-foreground">
-                  {assignment.panelistEmail ? `${assignment.panelistEmail} · ` : ''}ID {assignment.panelistId}
-                </p>
-              </Row>
-              <Row label="Reward points">
-                <span className="tabular font-medium">{formatNumber(assignment.rewardPoints)}</span>
-              </Row>
-              <Row label="Survey URL">
-                <span className="font-mono text-xs break-all">{assignment.surveyUrl || '—'}</span>
-              </Row>
-              <Row label="Assigned">{formatDateTime(assignment.assignedAt)}</Row>
-              {assignment.completedAt ? <Row label="Completed">{formatDateTime(assignment.completedAt)}</Row> : null}
-              {assignment.remark ? <Row label="Remark">{assignment.remark}</Row> : null}
-              {assignment.createdByName ? <Row label="Created by">{assignment.createdByName}</Row> : null}
-              {assignment.updatedByName ? <Row label="Updated by">{assignment.updatedByName}</Row> : null}
-              {assignment.updatedAt ? <Row label="Last updated">{formatDateTime(assignment.updatedAt)}</Row> : null}
-            </dl>
-          ) : null}
-        </div>
-        {assignment && (assignment.surveyUrl || assignment.status === 'active') ? (
-          <div className="mt-auto flex gap-2 border-t p-4">
-            {assignment.surveyUrl ? (
-              <Button asChild variant="outline" className="flex-1">
-                <a href={assignment.surveyUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="size-4" />
-                  Open survey
-                </a>
-              </Button>
-            ) : null}
-            {assignment.status === 'active' && onMarkComplete ? (
-              <Button className="flex-1" disabled={completePending} onClick={() => onMarkComplete(assignment)}>
-                <CheckCircle2 className="size-4" />
-                Mark complete
-              </Button>
-            ) : null}
+                  Mark completed
+                </Button>
+              ) : null}
+            </div>
           </div>
         ) : null}
       </SheetContent>

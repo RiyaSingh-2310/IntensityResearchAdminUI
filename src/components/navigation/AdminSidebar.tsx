@@ -1,66 +1,11 @@
-import { LogOut, Mail } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { Logo } from '@/components/common/Logo'
 import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { BRAND } from '@/config/brand'
 import { useAuth } from '@/context/AuthContext'
-import { ADMIN_NAV_SECTIONS, type NavItem } from '@/lib/constants'
+import { ADMIN_NAV } from '@/lib/constants'
+import { roleLabel } from '@/lib/labels'
 import { cn } from '@/lib/utils'
-
-function SidebarLink({
-  item,
-  collapsed,
-  onNavigate,
-}: {
-  item: NavItem
-  collapsed: boolean
-  onNavigate?: () => void
-}) {
-  const link = (
-    <NavLink
-      to={item.to}
-      onClick={onNavigate}
-      aria-label={collapsed ? item.label : undefined}
-      className={({ isActive }) =>
-        cn(
-          'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/80 transition-colors duration-150 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none',
-          collapsed && 'justify-center px-2',
-          isActive && 'bg-sidebar-accent text-sidebar-accent-foreground hover:bg-sidebar-accent',
-        )
-      }
-    >
-      {({ isActive }) => (
-        <>
-          <span
-            className={cn(
-              'absolute top-1/2 left-0 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-sidebar-primary transition-opacity',
-              isActive ? 'opacity-100' : 'opacity-0',
-            )}
-            aria-hidden
-          />
-          <item.icon
-            className={cn(
-              'size-[1.05rem] shrink-0 transition-colors',
-              isActive ? 'text-sidebar-primary' : 'text-sidebar-foreground/60 group-hover:text-sidebar-primary',
-            )}
-          />
-          {!collapsed ? <span className="truncate font-medium">{item.label}</span> : null}
-        </>
-      )}
-    </NavLink>
-  )
-
-  if (!collapsed) return link
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>{link}</TooltipTrigger>
-      <TooltipContent side="right" sideOffset={10}>
-        {item.label}
-      </TooltipContent>
-    </Tooltip>
-  )
-}
 
 export function AdminSidebar({
   collapsed = false,
@@ -73,60 +18,57 @@ export function AdminSidebar({
   const navigate = useNavigate()
 
   return (
-    <div className="flex h-full flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
-      <div className={cn('flex h-16 items-center px-5', collapsed && 'justify-center px-3')}>
-        <Logo compact={collapsed} />
+    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
+      <div className={cn('px-5 pt-6 pb-5', collapsed && 'px-3')}>
+        <Logo inverted compact={collapsed} />
       </div>
-      <div className="mx-4 h-px bg-sidebar-border" aria-hidden />
-
-      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-5" aria-label="Main navigation">
-        {ADMIN_NAV_SECTIONS.map((section) => (
-          <div key={section.label} className="space-y-1">
-            {collapsed ? (
-              <div className="mx-auto mb-2 h-px w-6 bg-sidebar-border first:hidden" aria-hidden />
-            ) : (
-              <p className="px-3 pb-1 text-[0.68rem] font-semibold tracking-[0.14em] text-sidebar-foreground/55 uppercase">
-                {section.label}
-              </p>
+      <nav className="flex-1 space-y-1 px-3">
+        {ADMIN_NAV.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            onClick={onNavigate}
+            aria-label={item.label}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-sidebar-foreground/75 transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                collapsed && 'justify-center px-2',
+                isActive &&
+                  'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm ring-1 ring-sidebar-primary/40',
+              )
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <item.icon className={cn('size-4 shrink-0', isActive && 'text-sidebar-primary')} />
+                {!collapsed ? <span className="font-medium">{item.label}</span> : null}
+              </>
             )}
-            {section.items.map((item) => (
-              <SidebarLink key={item.to} item={item} collapsed={collapsed} onNavigate={onNavigate} />
-            ))}
-          </div>
+          </NavLink>
         ))}
       </nav>
-
-      <div className="space-y-3 border-t border-sidebar-border p-3">
-        {!collapsed && user ? (
-          <div className="rounded-lg border border-sidebar-border bg-muted/60 px-3 py-2.5">
-            <p className="truncate text-sm font-medium text-foreground">{user.name}</p>
-            <p className="truncate text-xs text-sidebar-foreground/70">{user.email || user.role}</p>
+      <div className="p-4">
+        {!collapsed ? (
+          <div className="mb-3 rounded-2xl bg-sidebar-accent/70 px-3 py-3">
+            <p className="text-sm font-medium">{user?.name}</p>
+            <p className="text-xs text-sidebar-foreground/65">{roleLabel(user?.role)}</p>
           </div>
         ) : null}
         <Button
           variant="ghost"
           className={cn(
-            'w-full text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+            'w-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
             collapsed ? 'justify-center px-0' : 'justify-start',
           )}
           onClick={() => {
             logout()
             navigate('/admin/login')
           }}
-          aria-label="Sign out"
+          aria-label="Logout"
         >
           <LogOut className="size-4" />
-          {!collapsed ? 'Sign out' : null}
+          {!collapsed ? 'Logout' : null}
         </Button>
-        {!collapsed ? (
-          <a
-            href={`mailto:${BRAND.email}`}
-            className="flex items-center gap-2 px-3 pb-1 text-[0.7rem] text-sidebar-foreground/60 transition-colors hover:text-sidebar-primary"
-          >
-            <Mail className="size-3" />
-            {BRAND.email}
-          </a>
-        ) : null}
       </div>
     </div>
   )

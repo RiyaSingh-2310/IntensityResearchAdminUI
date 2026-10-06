@@ -22,7 +22,7 @@ export function useSurveyAssignment(id: string) {
 function invalidateProjects(queryClient: ReturnType<typeof useQueryClient>) {
   void queryClient.invalidateQueries({ queryKey: ['projects'] })
   void queryClient.invalidateQueries({ queryKey: ['panelists'] })
-  void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard })
+  void queryClient.invalidateQueries({ queryKey: ['analytics'] })
 }
 
 export function useAssignPanelists(onSuccess?: () => void) {

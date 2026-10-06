@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ApiError } from '@/lib/errors'
 import { notify } from '@/lib/notify'
 import { queryKeys } from '@/lib/query'
 import { rewardRequestService } from '@/services/rewardRequest.service'
@@ -44,6 +45,12 @@ export function useRewardRequestAction(onSuccess?: () => void) {
       )
       onSuccess?.()
     },
-    onError: (error) => notify.error(error),
+    onError: async (error) => {
+      notify.error(error)
+      if (error instanceof ApiError && error.status === 409) {
+        await refetchAfterMutation(queryClient)
+        onSuccess?.()
+      }
+    },
   })
 }

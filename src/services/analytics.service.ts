@@ -4,7 +4,21 @@ import { enrichPanelists } from '@/services/panelist.service'
 import type { DashboardAnalytics, PanelistAnalytics, RewardAnalytics } from '@/types'
 import type { ApiPanelistListData, ApiRewardRequestListData, ApiSurveyListData } from '@/types/api'
 
-async function loadSummaries() {
+type Summaries = Awaited<ReturnType<typeof fetchSummaries>>
+
+let summariesInFlight: Promise<Summaries> | null = null
+
+/** Dashboard and Analytics run several queries at once; they share one in-flight fetch instead of each paging through every panelist. */
+function loadSummaries() {
+  if (!summariesInFlight) {
+    summariesInFlight = fetchSummaries().finally(() => {
+      summariesInFlight = null
+    })
+  }
+  return summariesInFlight
+}
+
+async function fetchSummaries() {
   const [panelists, requestData, activeSurveys] = await Promise.all([
     listPanelists(),
     apiRequest<ApiRewardRequestListData>('/admin/reward-requests'),

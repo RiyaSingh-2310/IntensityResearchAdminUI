@@ -16,13 +16,7 @@ export function SortableHeader({
 }) {
   const active = sortBy === column
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="-ml-2 h-7 gap-1 px-2 text-xs font-semibold tracking-[0.04em] uppercase text-muted-foreground hover:text-foreground data-[active=true]:text-foreground"
-      data-active={active}
-      onClick={() => onSort(column)}
-    >
+    <Button variant="ghost" size="sm" className="-ml-2 h-8 px-2" onClick={() => onSort(column)}>
       {label}
       {active && sortDir === 'asc' ? (
         <ArrowUp className="size-3.5" />

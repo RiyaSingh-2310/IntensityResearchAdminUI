@@ -15,7 +15,8 @@ export function useSaveSettings() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: AdminSettings) => settingsService.update(input),
-    onSuccess: () => {
+    onSuccess: (_data, input) => {
+      queryClient.setQueryData(queryKeys.settings, input)
       notify.success('Settings saved.')
       void queryClient.invalidateQueries({ queryKey: queryKeys.settings })
       void queryClient.invalidateQueries({ queryKey: queryKeys.rewardMethods })
