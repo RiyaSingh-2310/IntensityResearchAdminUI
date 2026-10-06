@@ -36,7 +36,7 @@ export function getChartSurface() {
     tooltipBorder: readCssColor('--border', '#e1dfd7'),
     tick: readCssColor('--muted-foreground', '#646b66'),
     legend: readCssColor('--foreground', '#1f2421'),
-    cursor: readCssColor('--muted', '#eeede7'),
+    cursor: readCssColor('--muted', '#ffffff'),
     card: readCssColor('--card', '#ffffff'),
   }
 }

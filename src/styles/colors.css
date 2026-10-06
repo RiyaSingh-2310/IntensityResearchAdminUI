@@ -1,22 +1,22 @@
 /*
  * Intensity Research Admin design tokens.
- * Graphite navigation and primary actions on a warm ivory canvas, with a muted sage/forest accent
- * and soft neutral greys. Deliberately distinct from the blue + cream Client UI.
+ * Graphite navigation and primary actions on a pure white canvas, with a muted sage/forest accent
+ * and soft neutral greys. Deliberately distinct from the Client UI.
  * Status pairs follow `bg-{tone}-foreground text-{tone}` (soft surface + readable ink).
  */
 :root {
   --radius: 0.85rem;
-  --background: #f5f4ef;
+  --background: #ffffff;
   --foreground: #1f2421;
   --card: #ffffff;
   --card-foreground: #1f2421;
   --popover: #ffffff;
   --popover-foreground: #1f2421;
   --primary: #2c312e;
-  --primary-foreground: #f7f6f1;
-  --secondary: #eeede7;
+  --primary-foreground: #ffffff;
+  --secondary: #ffffff;
   --secondary-foreground: #1f2421;
-  --muted: #eeede7;
+  --muted: #ffffff;
   --muted-foreground: #646b66;
   --accent: #e8eee4;
   --accent-foreground: #1f2421;
@@ -36,7 +36,7 @@
   --warning-foreground: #f7ecd9;
   --info: #436474;
   --info-foreground: #e7eff2;
-  --surface: #faf9f5;
+  --surface: #ffffff;
   --surface-elevated: #ffffff;
   --chart-1: #3f5f45;
   --chart-2: #7d9a6f;
@@ -44,11 +44,11 @@
   --chart-4: #4c524e;
   --chart-5: #b8cab0;
   --sidebar: #262b28;
-  --sidebar-foreground: #eeede7;
+  --sidebar-foreground: #ffffff;
   --sidebar-primary: #a9c59d;
   --sidebar-primary-foreground: #1b241c;
   --sidebar-accent: #343a36;
-  --sidebar-accent-foreground: #f7f6f1;
+  --sidebar-accent-foreground: #ffffff;
   --sidebar-border: #343a36;
   --sidebar-ring: #a9c59d;
 }
