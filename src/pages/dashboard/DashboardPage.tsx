@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { AgeDistributionChart } from '@/components/analytics/AgeDistributionChart'
 import { GenderDistributionChart } from '@/components/analytics/GenderDistributionChart'
 import { RegistrationTrendChart } from '@/components/analytics/RegistrationTrendChart'
-import { sampleNote } from '@/components/analytics/sampleNote'
+// import { sampleNote } from '@/components/analytics/sampleNote'
 import { ErrorState } from '@/components/shared/PageState'
 import { KpiCard } from '@/components/shared/KpiCard'
 import { KpiSkeleton } from '@/components/shared/PageState'
@@ -65,54 +65,47 @@ export function DashboardPage() {
         </div>
       )}
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-[1.4fr_0.8fr]">
-        {panelists.isError ? null : (
+{panelists.isError ? null : (
+        <div className="mt-4 w-full space-y-4">
           <RegistrationTrendChart
             data={panelists.data?.registrationTrend.daily}
             loading={panelists.isLoading}
+            compact
           />
-        )}
 
-        <Card className="shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="font-display text-xl">Current operations</CardTitle>
-            <ClipboardList className="size-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-2xl bg-secondary px-4 py-3">
-              <p className="text-sm text-muted-foreground">Active projects</p>
-              <p className="font-display text-3xl">{data ? formatNumber(data.activeProjects) : '—'}</p>
-            </div>
-            <div className="space-y-3">
-              {(data?.recentActivity ?? []).map((item) => (
-                <div key={item.id} className="border-b border-border/70 pb-3 last:border-0 last:pb-0">
-                  <p className="text-sm font-medium">{item.title}</p>
-                  <p className="text-xs text-muted-foreground">{item.detail}</p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">{formatDateTime(item.at)}</p>
-                </div>
-              ))}
-            </div>
-            <Link to="/admin/reward-requests" className="text-sm text-primary hover:underline">
-              Review pending rewards
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-
-      {panelists.isError ? null : (
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <GenderDistributionChart
-            data={panelists.data?.gender}
-            loading={panelists.isLoading}
-            description={sampleNote(panelists.data)}
-          />
-          <AgeDistributionChart
-            data={panelists.data?.ageRange}
-            loading={panelists.isLoading}
-            description={sampleNote(panelists.data)}
-          />
+          <div className="grid gap-4 md:grid-cols-2">
+            <GenderDistributionChart data={panelists.data?.gender} loading={panelists.isLoading} />
+            <AgeDistributionChart data={panelists.data?.ageRange} loading={panelists.isLoading} />
+          </div>
         </div>
       )}
+
+      <Card className="mt-4 w-full gap-3 py-4 shadow-sm">
+        <CardHeader className="flex-row items-center justify-between px-5">
+          <CardTitle className="font-display text-xl">Current operations</CardTitle>
+          <ClipboardList className="size-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent className="space-y-3 px-5">
+          <div className="rounded-2xl bg-secondary px-4 py-2.5">
+            <p className="text-sm text-muted-foreground">Active projects</p>
+            <p className="font-display text-2xl leading-tight">
+              {data ? formatNumber(data.activeProjects) : '—'}
+            </p>
+          </div>
+          <div className="space-y-2">
+            {(data?.recentActivity ?? []).map((item) => (
+              <div key={item.id} className="border-b border-border/70 pb-2 last:border-0 last:pb-0">
+                <p className="text-sm font-medium leading-snug">{item.title}</p>
+                <p className="text-xs leading-snug text-muted-foreground">{item.detail}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">{formatDateTime(item.at)}</p>
+              </div>
+            ))}
+          </div>
+          <Link to="/admin/reward-requests" className="inline-block text-sm text-primary hover:underline">
+            Review pending rewards
+          </Link>
+        </CardContent>
+      </Card>
     </div>
   )
 }

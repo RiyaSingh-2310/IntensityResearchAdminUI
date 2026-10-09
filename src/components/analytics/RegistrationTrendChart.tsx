@@ -13,6 +13,7 @@ export function RegistrationTrendChart({
   loading?: boolean
   action?: ReactNode
   description?: string
+  compact?: boolean
 }) {
   return (
     <ChartCard
