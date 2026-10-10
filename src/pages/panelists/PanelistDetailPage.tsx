@@ -44,6 +44,7 @@ import {
   fullName,
   paymentMethodLabel,
 } from '@/lib/labels'
+import { AdditionalProfilesCard } from './AdditionalProfilesCard'
 import { PanelistEditDialog } from './PanelistEditDialog'
 
 const REMARK_MAX_LENGTH = 255
@@ -235,6 +236,8 @@ export function PanelistDetailPage() {
           />
         </CardContent>
       </Card>
+
+      <AdditionalProfilesCard panelistId={panelist.id} />
 
       <Card className="mt-4 shadow-sm">
         <CardHeader>

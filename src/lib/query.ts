@@ -12,6 +12,8 @@ export const queryKeys = {
   rewardAnalytics: ['analytics', 'rewards'] as const,
   panelists: (query: PanelistListQuery) => ['panelists', query] as const,
   panelist: (id: string) => ['panelists', 'detail', id] as const,
+  additionalProfiles: (id: string) => ['panelists', 'additional-profiles', id] as const,
+  profileQuestions: (profileType: string) => ['profile-questions', profileType] as const,
   panelistOptions: ['panelists', 'options'] as const,
   projects: (query: ProjectListQuery) => ['projects', query] as const,
   project: (id: string) => ['projects', 'detail', id] as const,

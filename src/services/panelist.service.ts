@@ -1,3 +1,4 @@
+import { mapAdditionalProfiles, mapProfileQuestions } from '@/lib/additionalProfiles'
 import { apiRequest, toSearch } from '@/lib/apiClient'
 import { mapWithConcurrency } from '@/lib/async'
 import { ApiError } from '@/lib/errors'
@@ -111,6 +112,16 @@ export const panelistService = {
       method: 'PUT',
       body: { status: 'inactive' },
     })
+  },
+  async additionalProfiles(id: string) {
+    const data = await apiRequest<unknown>(`/admin/panelists/${id}/additional-profiles`)
+    return mapAdditionalProfiles(data, id)
+  },
+  async profileQuestions(profileType: string) {
+    const data = await apiRequest<unknown>(`/profile-questions${toSearch({ profile_type: profileType })}`, {
+      auth: false,
+    })
+    return mapProfileQuestions(data)
   },
   async credit(id: string, points: number, remark?: string) {
     if (!Number.isInteger(points) || points <= 0) {

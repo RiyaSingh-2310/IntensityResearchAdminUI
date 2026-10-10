@@ -19,6 +19,23 @@ export function usePanelist(id: string) {
   })
 }
 
+export function useAdditionalProfiles(panelistId: string) {
+  return useQuery({
+    queryKey: queryKeys.additionalProfiles(panelistId),
+    queryFn: () => panelistService.additionalProfiles(panelistId),
+    enabled: Boolean(panelistId),
+  })
+}
+
+export function useProfileQuestions(profileType: string) {
+  return useQuery({
+    queryKey: queryKeys.profileQuestions(profileType),
+    queryFn: () => panelistService.profileQuestions(profileType),
+    enabled: Boolean(profileType),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
 export function usePanelistOptions() {
   return useQuery({
     queryKey: queryKeys.panelistOptions,
