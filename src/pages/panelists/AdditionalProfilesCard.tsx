@@ -10,11 +10,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useAdditionalProfiles, useProfileQuestions } from '@/hooks/usePanelists'
-import { bindProfileFields, type AdditionalProfile, type BoundProfileField } from '@/lib/additionalProfiles'
+import { bindProfileFields, panelEligibilityNotice, type AdditionalProfile, type BoundProfileField } from '@/lib/additionalProfiles'
 import { getErrorMessage } from '@/lib/errors'
 import { formatDate } from '@/lib/format'
 
-export function AdditionalProfilesCard({ panelistId }: { panelistId: string }) {
+export function AdditionalProfilesCard({ panelistId, industry = '' }: { panelistId: string; industry?: string }) {
   const profiles = useAdditionalProfiles(panelistId)
   const [selected, setSelected] = useState<{ panelistId: string; id: string; profileType: string } | null>(null)
   const selection = selected?.panelistId === panelistId ? selected : null
@@ -37,9 +37,15 @@ export function AdditionalProfilesCard({ panelistId }: { panelistId: string }) {
         ) : profiles.isError ? (
           <ErrorState message={getErrorMessage(profiles.error)} onRetry={() => profiles.refetch()} />
         ) : !profiles.data?.length ? (
-          <EmptyState title="No additional profiles." description="This panelist has not saved a B2B, healthcare, or patient profile." />
+          <EmptyState title="No additional profiles." description="This panelist has not saved a B2B, Healthcare Professional, or Patient panel." />
         ) : (
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3">
+            {panelEligibilityNotice(industry, profiles.data) ? (
+              <p className="rounded-2xl border bg-secondary px-4 py-3 text-sm text-foreground">
+                {panelEligibilityNotice(industry, profiles.data)}
+              </p>
+            ) : null}
+            <div className="grid gap-3 md:grid-cols-2">
             {profiles.data.map((profile) => (
               <div
                 key={`${profile.profileType}-${profile.id}`}
@@ -59,6 +65,7 @@ export function AdditionalProfilesCard({ panelistId }: { panelistId: string }) {
                 </Button>
               </div>
             ))}
+            </div>
           </div>
         )}
       </CardContent>

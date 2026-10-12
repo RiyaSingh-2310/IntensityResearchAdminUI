@@ -52,9 +52,10 @@ export function resolvePanelistAnswers(
   const byId = new Map(catalog.map((question) => [question.id, question]))
   return answers.map((answer) => {
     const question = byId.get(asString(answer.question_id))
-    const text = resolvedLabel(answer, question)
-    if (!text || text === (answer.answer_text ?? '').trim()) return answer
-    return { ...answer, answer_text: text }
+    const text = resolvedLabel(answer, question) || (answer.answer_text ?? '').trim()
+    const questionText = (answer.question_text ?? '').trim() || question?.question || ''
+    if (text === (answer.answer_text ?? '').trim() && questionText === (answer.question_text ?? '').trim()) return answer
+    return { ...answer, answer_text: text, question_text: questionText }
   })
 }
 

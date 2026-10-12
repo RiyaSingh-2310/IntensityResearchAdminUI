@@ -185,6 +185,8 @@ export function PanelistDetailPage() {
             <Info label="Employment" value={panelist.employment ? EMPLOYMENT_LABELS[panelist.employment] : '—'} />
             <Info label="Household income" value={panelist.householdIncome ? INCOME_LABELS[panelist.householdIncome] : '—'} />
             <Info label="Household size" value={panelist.householdSize || '—'} />
+            <Info label="Industry" value={panelist.industry || '—'} />
+            <Info label="Country" value={panelist.country || '—'} />
           </CardContent>
         </Card>
 
@@ -237,7 +239,7 @@ export function PanelistDetailPage() {
         </CardContent>
       </Card>
 
-      <AdditionalProfilesCard panelistId={panelist.id} />
+      <AdditionalProfilesCard panelistId={panelist.id} industry={panelist.industry} />
 
       <Card className="mt-4 shadow-sm">
         <CardHeader>

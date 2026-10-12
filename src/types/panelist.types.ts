@@ -47,6 +47,10 @@ export interface Panelist {
   employment?: Employment
   householdIncome?: HouseholdIncome
   householdSize?: string
+  /** Saved onboarding answer for the organization industry question. */
+  industry: string
+  /** Saved onboarding answer for the country question. Display only. */
+  country: string
   status: PanelistStatus
   isVerified: boolean
   onboardingStep: number

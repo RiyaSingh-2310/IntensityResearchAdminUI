@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
+import { safeAdminReturnPath } from '@/lib/access'
 import { Skeleton } from '@/components/ui/skeleton'
 
 function AuthBoot() {
@@ -23,10 +24,7 @@ export function ProtectedRoute() {
 }
 
 function returnPath(state: unknown) {
-  const from = (state as { from?: unknown } | null)?.from
-  if (typeof from !== 'string' || !from.startsWith('/admin/') || from.startsWith('//')) return '/admin/dashboard'
-  if (from === '/admin/login' || from === '/admin/forgot-password') return '/admin/dashboard'
-  return from
+  return safeAdminReturnPath((state as { from?: unknown } | null)?.from)
 }
 
 export function GuestRoute() {

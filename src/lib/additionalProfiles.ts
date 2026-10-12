@@ -470,14 +470,26 @@ function hasAnswerContent(answer: ProfileAnswer) {
   return Boolean(answer.answerText || answer.optionKeys.length || answer.optionTexts.length)
 }
 
+const PANEL_LABELS: Record<string, string> = {
+  b2b: 'B2B Panel',
+  healthcare: 'Healthcare Professional Panel',
+  patient: 'Patient Panel',
+}
+
+/** Industry option saved by onboarding: "1. Healthcare & Pharmaceuticals". */
+export function isHealthcarePharmaceuticals(industry: string) {
+  const text = industry.toLowerCase().replace(/^\d+\.\s*/, '').trim()
+  return text === 'healthcare & pharmaceuticals' || text.startsWith('healthcare & pharmaceuticals')
+}
+
+export function panelEligibilityNotice(industry: string, profiles: { profileType: string }[]) {
+  const hasHealthcarePanel = profiles.some((profile) => profile.profileType === 'healthcare')
+  if (!hasHealthcarePanel || !industry.trim() || isHealthcarePharmaceuticals(industry)) return ''
+  return `Healthcare Professional Panel is saved for this panelist. That panel is available for the Healthcare & Pharmaceuticals industry. The saved industry is ${industry}. This record was not changed.`
+}
+
 function profileTitle(profileType: string, label: string) {
-  const cleaned = label.trim()
-  if (cleaned) {
-    if (/profile$/i.test(cleaned)) return cleaned
-    if (/panel$/i.test(cleaned)) return cleaned.replace(/panel$/i, 'Profile').replace(/\s+/g, ' ').trim()
-    return cleaned
-  }
-  return `${humanizeKey(profileType)} Profile`
+  return PANEL_LABELS[profileType] || label.trim() || `${humanizeKey(profileType)} Panel`
 }
 
 function chosenOptionKeys(options: unknown) {

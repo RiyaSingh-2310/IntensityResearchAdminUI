@@ -132,6 +132,8 @@ export function mapPanelist(item: ApiPanelist, answers: ApiPanelistAnswer[] = []
     employment: demographics.employment,
     householdIncome: demographics.householdIncome,
     householdSize: demographics.householdSize,
+    industry: answerText(answers, 'industry'),
+    country: answerText(answers, 'which country'),
     status: item.status === 'active' ? 'active' : 'inactive',
     isVerified: asFlag(item.is_verified),
     onboardingStep: asNumber(item.onboarding_step),

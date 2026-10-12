@@ -4,13 +4,13 @@ import { buildOnboardingAnswers, mapOnboardingCatalog, resolvePanelistAnswers, t
 import { mapWithConcurrency } from '@/lib/async'
 import { ApiError } from '@/lib/errors'
 import {
-  joinName,
   mapPanelist,
   mapPanelistDetail,
   mapRewardRequest,
   paginateRows,
   sortRows,
 } from '@/lib/mappers'
+import { toPanelistUpdateBody } from '@/lib/panelistUpdate'
 import { projectService } from '@/services/project.service'
 import type {
   LookupOption,
@@ -102,12 +102,7 @@ export const panelistService = {
   async update(id: string, input: UpdatePanelistInput): Promise<void> {
     await apiRequest(`/admin/panelists/${id}`, {
       method: 'PUT',
-      body: {
-        name: joinName(input.firstName, input.lastName),
-        phone: input.phone,
-        status: input.status,
-        is_verified: input.isVerified ? 1 : 0,
-      },
+      body: toPanelistUpdateBody(input),
     })
   },
   async activate(id: string) {

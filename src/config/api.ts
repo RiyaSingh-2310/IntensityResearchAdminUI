@@ -7,7 +7,7 @@ export const apiConfig = {
 }
 
 function resolveApiBaseUrl() {
-  const configured = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '') ?? ''
+  const configured = import.meta.env?.VITE_API_BASE_URL?.trim().replace(/\/$/, '') ?? ''
   if (configured === OFFICIAL_API_BASE_URL) return configured
   return OFFICIAL_API_BASE_URL
 }
