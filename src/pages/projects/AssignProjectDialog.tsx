@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Field } from '@/components/shared/Field'
+import { ErrorState, LoadingSkeleton } from '@/components/shared/PageState'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -12,6 +13,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { PointsInput } from '@/components/ui/points-input'
 import { Textarea } from '@/components/ui/textarea'
+import { useSurveyAssignment } from '@/hooks/useProjects'
+import { getErrorMessage } from '@/lib/errors'
 import {
   SURVEY_NAME_MAX_LENGTH,
   validatePoints,
@@ -42,16 +45,36 @@ export function AssignProjectDialog({
   onOpenChange: (open: boolean) => void
   onSubmit: (input: UpdateSurveyInput) => void
 }) {
+  const detail = useSurveyAssignment(open && assignment ? assignment.id : '')
+  const saved = detail.data
+
   return (
     <Dialog open={open} onOpenChange={(next) => !pending && onOpenChange(next)}>
       {open && assignment ? (
-        <EditSurveyForm
-          key={assignment.id}
-          assignment={assignment}
-          pending={pending}
-          onOpenChange={onOpenChange}
-          onSubmit={onSubmit}
-        />
+        detail.isLoading ? (
+          <DialogContent className="sm:max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Edit assignment</DialogTitle>
+              <DialogDescription>Loading the saved assignment.</DialogDescription>
+            </DialogHeader>
+            <LoadingSkeleton rows={4} />
+          </DialogContent>
+        ) : detail.isError || !saved ? (
+          <DialogContent className="sm:max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Edit assignment</DialogTitle>
+            </DialogHeader>
+            <ErrorState message={getErrorMessage(detail.error)} onRetry={() => detail.refetch()} />
+          </DialogContent>
+        ) : (
+          <EditSurveyForm
+            key={saved.id}
+            assignment={saved}
+            pending={pending}
+            onOpenChange={onOpenChange}
+            onSubmit={onSubmit}
+          />
+        )
       ) : null}
     </Dialog>
   )

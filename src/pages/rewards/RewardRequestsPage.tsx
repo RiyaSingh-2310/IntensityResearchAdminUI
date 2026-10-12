@@ -46,7 +46,7 @@ export function RewardRequestsPage() {
   const rows = list.data?.data ?? []
 
   function openDecision(request: RewardRequest, action: Decision['action']) {
-    setComment('')
+    setComment(request.comment ?? '')
     setDecision({ request, action })
   }
 

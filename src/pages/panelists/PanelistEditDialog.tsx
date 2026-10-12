@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Field } from '@/components/shared/Field'
+import { ErrorState, LoadingSkeleton } from '@/components/shared/PageState'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import {
   Dialog,
@@ -12,9 +14,9 @@ import {
 } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { usePanelist } from '@/hooks/usePanelists'
-import { GENDER_LABELS } from '@/lib/labels'
+import { getErrorMessage } from '@/lib/errors'
 import { required, sanitizePhoneInput, validateOptionalPhone } from '@/lib/validators'
-import type { Panelist, UpdatePanelistInput } from '@/types'
+import type { OnboardingAnswer, Panelist, UpdatePanelistInput } from '@/types'
 
 export function PanelistEditDialog({
   open,
@@ -29,16 +31,36 @@ export function PanelistEditDialog({
   onOpenChange: (open: boolean) => void
   onSubmit: (input: UpdatePanelistInput) => void
 }) {
+  const detail = usePanelist(open && panelist ? panelist.id : '')
+  const saved = detail.data
+
   return (
     <Dialog open={open} onOpenChange={(next) => !pending && onOpenChange(next)}>
       {open && panelist ? (
-        <PanelistEditForm
-          key={panelist.id}
-          panelist={panelist}
-          pending={pending}
-          onOpenChange={onOpenChange}
-          onSubmit={onSubmit}
-        />
+        detail.isLoading ? (
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Edit panelist</DialogTitle>
+              <DialogDescription>Loading saved panelist details.</DialogDescription>
+            </DialogHeader>
+            <LoadingSkeleton rows={6} />
+          </DialogContent>
+        ) : detail.isError || !saved ? (
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Edit panelist</DialogTitle>
+            </DialogHeader>
+            <ErrorState message={getErrorMessage(detail.error)} onRetry={() => detail.refetch()} />
+          </DialogContent>
+        ) : (
+          <PanelistEditForm
+            key={saved.id}
+            panelist={saved}
+            pending={pending}
+            onOpenChange={onOpenChange}
+            onSubmit={onSubmit}
+          />
+        )
       ) : null}
     </Dialog>
   )
@@ -50,7 +72,7 @@ function PanelistEditForm({
   onOpenChange,
   onSubmit,
 }: {
-  panelist: Panelist
+  panelist: Panelist & { onboardingAnswers: OnboardingAnswer[] }
   pending: boolean
   onOpenChange: (open: boolean) => void
   onSubmit: (input: UpdatePanelistInput) => void
@@ -63,17 +85,12 @@ function PanelistEditForm({
     isVerified: panelist.isVerified,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const detail = usePanelist(panelist.id)
-  const profile = detail.data
-  const genderAnswer = profile?.onboardingAnswers.find((item) => item.question.toLowerCase().includes('gender'))
-  const genderLabel = profile?.gender
-    ? GENDER_LABELS[profile.gender]
-    : genderAnswer?.answer || (detail.isLoading ? 'Loading…' : '—')
 
   function submit() {
+    const phoneUnchanged = form.phone.trim() === panelist.phone.trim()
     const next = {
       firstName: required(form.firstName, 'First name') ?? '',
-      phone: validateOptionalPhone(form.phone) ?? '',
+      phone: phoneUnchanged ? '' : (validateOptionalPhone(form.phone) ?? ''),
     }
     setErrors(next)
     if (Object.values(next).some(Boolean) || pending) return
@@ -126,9 +143,6 @@ function PanelistEditForm({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Gender" className="sm:col-span-2">
-          <Input value={genderLabel} disabled readOnly />
-        </Field>
         <Field
           label="Verification"
           htmlFor="edit-panelist-verification"
@@ -148,18 +162,9 @@ function PanelistEditForm({
             </SelectContent>
           </Select>
         </Field>
-        {detail.isError ? (
-          <p className="text-xs text-destructive sm:col-span-2">
-            Onboarding answers could not be loaded. Name, phone, status, and verification can still be saved.
-          </p>
-        ) : null}
-        {(profile?.onboardingAnswers ?? [])
-          .filter((item) => !item.question.toLowerCase().includes('gender'))
-          .map((item) => (
-            <Field key={item.id || item.question} label={item.question || 'Onboarding answer'} className="sm:col-span-2">
-              <Input value={item.answer || '—'} disabled readOnly />
-            </Field>
-          ))}
+        {panelist.onboardingAnswers.map((item) => (
+          <SavedAnswerField key={item.id || item.question} answer={item} />
+        ))}
       </div>
       <DialogFooter>
         <Button variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>
@@ -170,5 +175,40 @@ function PanelistEditForm({
         </Button>
       </DialogFooter>
     </DialogContent>
+  )
+}
+
+function SavedAnswerField({ answer }: { answer: OnboardingAnswer }) {
+  const selected = answer.selectedIds.filter((id) => answer.options.some((option) => option.id === id))
+  const multiple = answer.fieldType === 'checkbox' || selected.length > 1
+
+  return (
+    <Field label={answer.question || 'Onboarding answer'} className="sm:col-span-2">
+      {multiple && answer.options.length > 0 ? (
+        <div className="grid gap-2">
+          {answer.options.map((option) => (
+            <label key={option.id} className="flex items-center gap-2 text-sm">
+              <Checkbox checked={selected.includes(option.id)} disabled />
+              <span>{option.label}</span>
+            </label>
+          ))}
+        </div>
+      ) : selected.length === 1 ? (
+        <Select value={selected[0]} disabled>
+          <SelectTrigger className="w-full" disabled>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {answer.options.map((option) => (
+              <SelectItem key={option.id} value={option.id}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : (
+        <Input value={answer.answer} disabled readOnly />
+      )}
+    </Field>
   )
 }

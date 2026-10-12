@@ -158,6 +158,7 @@ export function mapPanelistDetail(
   answers: ApiPanelistAnswer[] = [],
   requests: RewardRequest[] = [],
   assignments: ProjectAssignment[] = [],
+  onboardingAnswers?: PanelistDetail['onboardingAnswers'],
 ): PanelistDetail {
   const panelist = mapPanelist(item, answers)
   const mine = requests.filter((request) => request.panelistId === panelist.id)
@@ -171,11 +172,14 @@ export function mapPanelistDetail(
     completedProjectCount: assignments.filter((assignment) => assignment.status === 'complete').length,
     assignments,
     recentRewards: mine.map(toTransaction),
-    onboardingAnswers: answers
+    onboardingAnswers: onboardingAnswers ?? answers
       .map((answer) => ({
         id: asString(answer.id ?? answer.question_id),
         question: (answer.question_text ?? '').trim(),
         answer: (answer.answer_text ?? '').trim(),
+        fieldType: 'text',
+        options: [],
+        selectedIds: [],
       }))
       .filter((answer) => answer.question || answer.answer),
   }

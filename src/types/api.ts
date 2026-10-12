@@ -34,6 +34,7 @@ export interface ApiPanelistAnswer {
   step_name?: string
   answer_text?: string | null
   answer_ref_id?: number | string | null
+  answer_ref_ids?: Array<number | string> | null
 }
 
 export interface ApiPanelistListData {

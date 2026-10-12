@@ -49,9 +49,10 @@ function sameSettings(a: AdminSettings, b: AdminSettings) {
 
 function TestEmailCard() {
   const { user } = useAuth()
-  const [email, setEmail] = useState(user?.email ?? '')
+  const [emailOverride, setEmailOverride] = useState<string | null>(null)
   const [error, setError] = useState<string>()
   const send = useSendTestEmail()
+  const email = emailOverride ?? user?.email ?? ''
 
   function submit(event: FormEvent) {
     event.preventDefault()
@@ -79,7 +80,7 @@ function TestEmailCard() {
               aria-invalid={Boolean(error)}
               disabled={send.isPending}
               onChange={(event) => {
-                setEmail(event.target.value)
+                setEmailOverride(event.target.value)
                 setError(undefined)
               }}
             />

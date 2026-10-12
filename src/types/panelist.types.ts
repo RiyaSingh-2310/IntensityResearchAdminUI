@@ -66,6 +66,9 @@ export interface OnboardingAnswer {
   id: string
   question: string
   answer: string
+  fieldType: string
+  options: { id: string; label: string }[]
+  selectedIds: string[]
 }
 
 export interface PanelistDetail extends Panelist {

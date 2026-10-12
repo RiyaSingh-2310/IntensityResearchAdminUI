@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useAdditionalProfiles, useProfileQuestions } from '@/hooks/usePanelists'
-import { renderProfileFields, type AdditionalProfile } from '@/lib/additionalProfiles'
+import { bindProfileFields, type AdditionalProfile, type BoundProfileField } from '@/lib/additionalProfiles'
 import { getErrorMessage } from '@/lib/errors'
 import { formatDate } from '@/lib/format'
 
@@ -93,7 +93,7 @@ function AdditionalProfileDialog({
   onRetry: () => void
 }) {
   const questions = useProfileQuestions(open && profile?.panelistId === panelistId ? profile.profileType : '')
-  const fields = profile ? renderProfileFields(profile, questions.data ?? []) : []
+  const fields = profile ? bindProfileFields(profile, questions.data ?? profile.questions) : []
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -127,11 +127,11 @@ function AdditionalProfileDialog({
                 ))}
               </div>
             ) : null}
-            {fields.length === 0 ? (
+            {answeredFields(fields).length === 0 ? (
               <EmptyState title="No answers returned." description="This profile has no questions or saved answers." />
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {fields.map((field) => (
+              <div className="grid gap-5 sm:grid-cols-2">
+                {answeredFields(fields).map((field) => (
                   <Info key={field.id} label={field.label} help={field.helpText} value={field.value} wide={field.wide} />
                 ))}
               </div>
@@ -143,6 +143,51 @@ function AdditionalProfileDialog({
       </DialogContent>
     </Dialog>
   )
+}
+
+function answeredFields(fields: BoundProfileField[]) {
+  return fields.flatMap((field) => {
+    const value = readableAnswer(field)
+    if (!value) return []
+    return [{ ...field, value, wide: field.wide || value.length > 80 || value.includes('\n') }]
+  })
+}
+
+/** Selected option labels and typed text only. Unselected choices and raw option keys stay out of the view. */
+function readableAnswer(field: BoundProfileField) {
+  const chosen = field.selected.flatMap((value) => {
+    const option = field.options.find((item) => item.value === value)
+    const label = optionLabel(option?.label, value)
+    return label ? [{ label, group: option?.group ?? '' }] : []
+  })
+  const groups = new Map<string, string[]>()
+  for (const option of chosen) {
+    const bucket = groups.get(option.group) ?? []
+    if (!bucket.includes(option.label)) bucket.push(option.label)
+    groups.set(option.group, bucket)
+  }
+  const selection =
+    groups.size === 0
+      ? ''
+      : groups.size === 1 && groups.has('')
+        ? [...groups.values()][0].join(', ')
+        : [...groups.entries()]
+            .map(([group, labels]) => (group ? `${group}\n${labels.join(', ')}` : labels.join(', ')))
+            .join('\n\n')
+  const typed = field.text.trim()
+  const typedAlreadyShown = chosen.some((option) => option.label.toLowerCase() === typed.toLowerCase())
+  if (selection && typed && !typedAlreadyShown) return `${selection}\n${typed}`
+  return selection || typed
+}
+
+function optionLabel(label: string | undefined, value: string) {
+  const text = (label ?? '').trim()
+  if (text && !text.includes('_')) return text
+  const source = text.includes('_') ? text : value
+  if (!source.includes('_') && !source.includes('-')) return text || source
+  const readable = source.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim()
+  if (!readable) return ''
+  return readable.charAt(0).toUpperCase() + readable.slice(1)
 }
 
 function Info({
@@ -158,9 +203,9 @@ function Info({
 }) {
   return (
     <div className={wide ? 'sm:col-span-2' : undefined}>
-      <p className="text-xs tracking-wide text-muted-foreground uppercase">{label}</p>
+      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
       {help ? <p className="mt-1 text-xs text-muted-foreground">{help}</p> : null}
-      <p className="mt-1 text-sm font-medium break-words whitespace-pre-wrap">{value || '—'}</p>
+      <p className="mt-1.5 text-sm font-medium break-words whitespace-pre-wrap text-foreground">{value}</p>
     </div>
   )
 }

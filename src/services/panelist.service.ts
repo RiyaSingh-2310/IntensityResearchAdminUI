@@ -1,5 +1,6 @@
 import { mapAdditionalProfiles, mapProfileQuestions } from '@/lib/additionalProfiles'
 import { apiRequest, toSearch } from '@/lib/apiClient'
+import { buildOnboardingAnswers, mapOnboardingCatalog, resolvePanelistAnswers, type OnboardingQuestion } from '@/lib/onboardingAnswers'
 import { mapWithConcurrency } from '@/lib/async'
 import { ApiError } from '@/lib/errors'
 import {
@@ -82,13 +83,21 @@ export const panelistService = {
     }))
   },
   async get(id: string): Promise<PanelistDetail> {
-    const [detail, requestData, assignments] = await Promise.all([
+    const [detail, requestData, assignments, catalog] = await Promise.all([
       apiRequest<ApiPanelistDetailData>(`/admin/panelists/${id}`),
       apiRequest<ApiRewardRequestListData>('/admin/reward-requests'),
       projectService.listForPanelist(id),
+      loadOnboardingCatalog(),
     ])
     const requests = (requestData.requests ?? []).map(mapRewardRequest)
-    return mapPanelistDetail(detail.panelist, detail.answers ?? [], requests, assignments)
+    const answers = resolvePanelistAnswers(detail.answers ?? [], catalog)
+    return mapPanelistDetail(
+      detail.panelist,
+      answers,
+      requests,
+      assignments,
+      buildOnboardingAnswers(answers, catalog),
+    )
   },
   async update(id: string, input: UpdatePanelistInput): Promise<void> {
     await apiRequest(`/admin/panelists/${id}`, {
@@ -144,15 +153,28 @@ export const PROFILE_SCAN_LIMIT = 500
 /** Demographics only exist on GET /admin/panelists/{id}, so each panelist needs its own request. */
 export async function enrichPanelists(rows: Panelist[], limit = PROFILE_SCAN_LIMIT) {
   const subset = [...rows].sort((a, b) => b.registeredAt.localeCompare(a.registeredAt)).slice(0, limit)
+  const catalog = await loadOnboardingCatalog()
   const enriched = await mapWithConcurrency(subset, 6, async (item) => {
     try {
       const detail = await apiRequest<ApiPanelistDetailData>(`/admin/panelists/${item.id}`)
-      return mapPanelist(detail.panelist, detail.answers ?? [])
+      return mapPanelist(detail.panelist, resolvePanelistAnswers(detail.answers ?? [], catalog))
     } catch {
       return item
     }
   })
   return { rows: enriched, scanned: subset.length }
+}
+
+let catalogTask: Promise<OnboardingQuestion[]> | null = null
+
+function loadOnboardingCatalog() {
+  catalogTask ??= apiRequest<unknown>('/questions', { auth: false })
+    .then(mapOnboardingCatalog)
+    .catch((error: unknown) => {
+      catalogTask = null
+      return Promise.reject(error)
+    })
+  return catalogTask.catch(() => [] as OnboardingQuestion[])
 }
 
 export async function listAllPanelists(search?: string, status?: string) {

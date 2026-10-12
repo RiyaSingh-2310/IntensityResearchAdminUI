@@ -6,6 +6,7 @@ export interface ProfileShowWhen {
 }
 
 export interface ProfileOption {
+  id: string
   key: string
   text: string
   group: string
@@ -25,12 +26,25 @@ export interface ProfileQuestion {
 }
 
 export interface ProfileAnswer {
+  questionId: string
   questionKey: string
   questionText: string
   displayOrder: number
   optionKeys: string[]
   optionTexts: string[]
   answerText: string
+}
+
+export interface BoundProfileField {
+  id: string
+  label: string
+  helpText: string
+  fieldType: 'single' | 'multi' | 'text'
+  options: { value: string; label: string; group: string }[]
+  selected: string[]
+  text: string
+  wide: boolean
+  order: number
 }
 
 export interface AdditionalProfile {
@@ -78,7 +92,9 @@ const RESERVED_PROFILE_KEYS = new Set([
 ])
 
 export function mapAdditionalProfiles(data: unknown, panelistId: string): AdditionalProfile[] {
-  return extractList(data, PROFILE_LIST_KEYS)
+  const listed = extractList(data, PROFILE_LIST_KEYS)
+  const records = listed.length ? listed : profilesFromMap(data)
+  return records
     .map((item) => mapProfile(item, panelistId))
     .filter((profile): profile is AdditionalProfile => profile !== null)
 }
@@ -129,6 +145,97 @@ export function renderProfileFields(
   return rendered.sort(byOrder)
 }
 
+export function bindProfileFields(profile: AdditionalProfile, catalog: ProfileQuestion[] = []): BoundProfileField[] {
+  const questions = mergeQuestions(catalog, profile.questions)
+  const selectedKeys = selectedOptionKeys(profile.answers, questions)
+  const fields: BoundProfileField[] = []
+  const seen = new Set<string>()
+
+  for (const question of [...questions].sort(byOrder)) {
+    const key = question.questionKey || question.id
+    if (!key || seen.has(key)) continue
+    const answer = profile.answers.find(
+      (item) => item.questionKey === question.questionKey || (item.questionId !== '' && item.questionId === question.id),
+    )
+    if (!isQuestionVisible(question, selectedKeys, Boolean(answer && hasAnswerContent(answer)))) continue
+    seen.add(key)
+    fields.push(bindQuestion(question, answer))
+  }
+
+  for (const answer of profile.answers) {
+    const key = answer.questionKey || answer.questionId
+    if (!key || seen.has(key) || !hasAnswerContent(answer)) continue
+    seen.add(key)
+    fields.push({
+      id: key,
+      label: answer.questionText || humanizeKey(answer.questionKey || answer.questionId),
+      helpText: '',
+      fieldType: answer.optionKeys.length > 1 || answer.optionTexts.length > 1 ? 'multi' : answer.optionKeys.length || answer.optionTexts.length ? 'single' : 'text',
+      options: uniqueStrings([...answer.optionKeys, ...answer.optionTexts]).map((value) => ({
+        value,
+        label: answer.optionTexts[answer.optionKeys.indexOf(value)] || humanizeKey(value),
+        group: '',
+      })),
+      selected: uniqueStrings([...answer.optionKeys, ...answer.optionTexts]),
+      text: answer.answerText,
+      wide: true,
+      order: answer.displayOrder || fields.length + 1,
+    })
+  }
+
+  return fields.sort(byOrder)
+}
+
+function bindQuestion(question: ProfileQuestion, answer: ProfileAnswer | undefined): BoundProfileField {
+  const fieldType = question.fieldType === 'multi' || question.fieldType === 'checkbox' ? 'multi' : question.fieldType === 'text' ? 'text' : question.options.length ? 'single' : 'text'
+  const selected = new Set<string>()
+  let text = answer?.answerText ?? ''
+  for (const key of answer?.optionKeys ?? []) {
+    const option = question.options.find((item) => item.key === key || item.id === key)
+    selected.add(option ? optionValue(option) : key)
+  }
+  for (const label of answer?.optionTexts ?? []) {
+    const option = question.options.find(
+      (item) => item.text.toLowerCase() === label.toLowerCase() || item.key === label || item.id === label,
+    )
+    if (option) selected.add(optionValue(option))
+  }
+  if (text && fieldType !== 'text') {
+    const option = question.options.find(
+      (item) => item.text.toLowerCase() === text.toLowerCase() || item.key === text || item.id === text,
+    )
+    if (option) {
+      selected.add(optionValue(option))
+      if (!option.isOther) text = ''
+    }
+  }
+  const options = question.options.map((option) => ({
+    value: optionValue(option),
+    label: option.text,
+    group: option.group,
+  }))
+  for (const value of selected) {
+    if (!options.some((option) => option.value === value)) {
+      options.push({ value, label: humanizeKey(value), group: '' })
+    }
+  }
+  return {
+    id: question.questionKey || question.id,
+    label: question.questionText || answer?.questionText || humanizeKey(question.questionKey),
+    helpText: question.helpText,
+    fieldType,
+    options,
+    selected: [...selected],
+    text,
+    wide: fieldType !== 'single' || isWide(text, [...selected]),
+    order: question.displayOrder,
+  }
+}
+
+function optionValue(option: ProfileOption) {
+  return option.key || option.id
+}
+
 function mapProfile(value: unknown, panelistId: string): AdditionalProfile | null {
   const record = asRecord(value)
   if (!record) return null
@@ -155,7 +262,7 @@ function mapProfile(value: unknown, panelistId: string): AdditionalProfile | nul
 }
 
 function extractAnswers(record: Record<string, unknown>): ProfileAnswer[] {
-  const explicit = firstList(record, ANSWER_LIST_KEYS)
+  const explicit = ANSWER_LIST_KEYS.flatMap((key) => answerItems(record[key]))
   const fromQuestions = Array.isArray(record.questions) ? record.questions : []
   const merged = new Map<string, ProfileAnswer>()
   ;[...fromQuestions, ...explicit].forEach((item, index) => {
@@ -169,6 +276,7 @@ function extractAnswers(record: Record<string, unknown>): ProfileAnswer[] {
 
 function mergeAnswer(current: ProfileAnswer, next: ProfileAnswer): ProfileAnswer {
   return {
+    questionId: next.questionId || current.questionId,
     questionKey: current.questionKey,
     questionText: next.questionText || current.questionText,
     displayOrder: next.displayOrder || current.displayOrder,
@@ -185,9 +293,13 @@ function mapAnswer(value: unknown, index: number): ProfileAnswer | null {
   const questionKey = asString(
     record.question_key ?? record.questionKey ?? nested.question_key ?? record.key,
   ).trim()
+  const questionId = asString(record.question_id ?? record.questionId ?? nested.question_id).trim()
   const optionKeys = uniqueStrings([
     ...stringList(record.option_keys ?? record.optionKeys ?? nested.option_keys ?? nested.optionKeys),
     ...stringList(record.option_key ?? record.optionKey ?? nested.option_key ?? nested.optionKey),
+    ...stringList(record.answer_ref_ids ?? record.answer_ref_id ?? nested.answer_ref_ids ?? nested.answer_ref_id),
+    ...stringList(record.selected ?? record.selected_keys ?? record.selected_options ?? record.values ?? record.choices),
+    ...stringList(nested.selected ?? nested.selected_keys ?? nested.values),
     ...chosenOptionKeys(record.options),
     ...chosenOptionKeys(nested.options),
   ])
@@ -206,9 +318,10 @@ function mapAnswer(value: unknown, index: number): ProfileAnswer | null {
     record.value,
     nested.value,
   )
-  if (!questionKey && !answerText && optionKeys.length === 0 && optionTexts.length === 0) return null
+  if (!questionKey && !questionId && !answerText && optionKeys.length === 0 && optionTexts.length === 0) return null
   return {
-    questionKey: questionKey || `answer-${index + 1}`,
+    questionId,
+    questionKey: questionKey || questionId || `answer-${index + 1}`,
     questionText: asString(record.question_text ?? record.questionText ?? nested.question_text).trim(),
     displayOrder: asNumber(record.display_order ?? record.displayOrder, index + 1),
     optionKeys,
@@ -246,6 +359,7 @@ function mapOption(value: unknown): ProfileOption | null {
   const text = asString(record.option_text ?? record.optionText).trim()
   if (!key && !text) return null
   return {
+    id: asString(record.id),
     key,
     text: text || humanizeKey(key),
     group: asString(record.group_label ?? record.groupLabel).trim(),
@@ -386,12 +500,29 @@ function optionChosen(option: Record<string, unknown>) {
   return asFlag(option.selected ?? option.is_selected ?? option.checked ?? option.is_checked)
 }
 
-function firstList(record: Record<string, unknown>, keys: string[]) {
-  for (const key of keys) {
-    const list = toList(record[key])
-    if (list.length) return list
-  }
-  return []
+function profilesFromMap(data: unknown) {
+  const record = asRecord(data)
+  if (!record) return []
+  return Object.entries(record).flatMap(([key, value]) => {
+    const item = asRecord(value)
+    if (!item) return []
+    if (!(item.profile_type || item.profileType || item.answers || item.questions || item.id)) return []
+    if (!item.profile_type && !item.profileType) return [{ ...item, profile_type: key }]
+    return [item]
+  })
+}
+
+function answerItems(value: unknown) {
+  const list = toList(value)
+  if (list.length) return list
+  const record = asRecord(value)
+  if (!record) return []
+  return Object.entries(record).flatMap(([key, item]) => {
+    if (Array.isArray(item)) return item
+    if (item && typeof item === 'object') return [{ question_key: key, ...(item as Record<string, unknown>) }]
+    if (item === null || item === undefined || item === '') return []
+    return [{ question_key: key, answer_text: item }]
+  })
 }
 
 function extractList(data: unknown, keys: string[]) {
