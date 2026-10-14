@@ -21,6 +21,9 @@ const PanelistDetailPage = lazy(() =>
 const ProjectsPage = lazy(() =>
   import('@/pages/projects/ProjectsPage').then((module) => ({ default: module.ProjectsPage })),
 )
+const AssignedProjectPage = lazy(() =>
+  import('@/pages/projects/AssignedProjectPage').then((module) => ({ default: module.AssignedProjectPage })),
+)
 const RewardsPage = lazy(() =>
   import('@/pages/rewards/RewardsPage').then((module) => ({ default: module.RewardsPage })),
 )
@@ -62,6 +65,7 @@ export function AppRoutes() {
             <Route path="/admin/panelists" element={<PanelistsPage />} />
             <Route path="/admin/panelists/:id" element={<PanelistDetailPage />} />
             <Route path="/admin/projects" element={<ProjectsPage />} />
+            <Route path="/admin/assign-project" element={<AssignedProjectPage />} />
             <Route path="/admin/rewards" element={<RewardsPage />} />
             <Route path="/admin/reward-requests" element={<RewardRequestsPage />} />
             <Route path="/admin/reward-history" element={<RewardHistoryPage />} />

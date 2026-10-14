@@ -148,7 +148,6 @@ export function SettingsPage() {
       <PageHeader
         title="Settings"
         description="Administrator profile, appearance, and payout configuration."
-        crumbs={[{ label: 'Admin', to: '/admin/dashboard' }, { label: 'Settings' }]}
       />
 
       <div className="grid gap-4 xl:grid-cols-2">

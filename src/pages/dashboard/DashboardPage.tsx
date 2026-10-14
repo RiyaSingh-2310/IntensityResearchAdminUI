@@ -28,7 +28,6 @@ export function DashboardPage() {
       <PageHeader
         title="Dashboard"
         description="A live operating picture of the panel, assignments, and rewards economy."
-        crumbs={[{ label: 'Admin', to: '/admin/dashboard' }, { label: 'Dashboard' }]}
       />
 
       {panelists.isError ? (

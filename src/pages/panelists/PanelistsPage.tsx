@@ -136,7 +136,6 @@ export function PanelistsPage() {
       <PageHeader
         title="Panelists"
         description="Search, filter, and manage the research panel."
-        crumbs={[{ label: 'Admin', to: '/admin/dashboard' }, { label: 'Panelists' }]}
       />
 
       <DataTable

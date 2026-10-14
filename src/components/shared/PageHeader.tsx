@@ -22,15 +22,17 @@ export function PageHeader({
 }: {
   title: string
   description?: string
-  crumbs: Crumb[]
+  crumbs?: Crumb[]
   actions?: ReactNode
 }) {
+  const trail = crumbs ?? []
   return (
     <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="space-y-2">
+        {trail.length > 1 ? (
         <Breadcrumb>
           <BreadcrumbList>
-            {crumbs.map((crumb, index) => (
+            {trail.map((crumb, index) => (
               <Fragment key={`${crumb.label}-${index}`}>
                 {index > 0 ? <BreadcrumbSeparator /> : null}
                 <BreadcrumbItem>
@@ -46,6 +48,7 @@ export function PageHeader({
             ))}
           </BreadcrumbList>
         </Breadcrumb>
+        ) : null}
         <div>
           <h1 className="font-display text-3xl tracking-tight">{title}</h1>
           {description ? (

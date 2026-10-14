@@ -119,7 +119,6 @@ export function RewardHistoryPage() {
       <PageHeader
         title="Reward History"
         description="Every approved, rejected, and pending redemption in one ledger."
-        crumbs={[{ label: 'Admin', to: '/admin/dashboard' }, { label: 'Reward History' }]}
         actions={
           <Button variant="outline" onClick={() => exportCsv.mutate()} disabled={exportCsv.isPending || !list.data?.total}>
             <Download className="size-4" />

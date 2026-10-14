@@ -102,7 +102,7 @@ export function PanelistDetailPage() {
         title={name}
         description={panelist.email}
         crumbs={[
-          { label: 'Admin', to: '/admin/dashboard' },
+          { label: 'Dashboard', to: '/admin/dashboard' },
           { label: 'Panelists', to: '/admin/panelists' },
           { label: name },
         ]}
@@ -264,7 +264,7 @@ export function PanelistDetailPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           {panelist.assignments.length === 0 ? (
-            <EmptyState title="No surveys assigned." description="Assign a survey from Assigned Projects." />
+            <EmptyState title="No surveys assigned." description="Assign a survey from Assigned Project." />
           ) : (
             panelist.assignments.map((assignment) => (
               <div key={assignment.id} className="flex flex-col gap-2 rounded-2xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">

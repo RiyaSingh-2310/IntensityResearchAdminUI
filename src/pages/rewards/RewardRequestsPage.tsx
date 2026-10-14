@@ -87,7 +87,6 @@ export function RewardRequestsPage() {
       <PageHeader
         title="Reward Requests"
         description="Approve or reject redemptions before points leave the ledger."
-        crumbs={[{ label: 'Admin', to: '/admin/dashboard' }, { label: 'Reward Requests' }]}
       />
 
       <DataTable

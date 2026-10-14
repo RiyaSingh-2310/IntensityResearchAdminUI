@@ -58,7 +58,6 @@ export function RewardsPage() {
       <PageHeader
         title="Rewards"
         description="Payout methods panelists can redeem points through. Availability comes from the backend."
-        crumbs={[{ label: 'Admin', to: '/admin/dashboard' }, { label: 'Rewards' }]}
         actions={
           <Button asChild>
             <Link to="/admin/settings">

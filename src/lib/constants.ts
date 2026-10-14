@@ -1,6 +1,7 @@
 import {
   BarChart3,
   ClipboardList,
+  ClipboardPen,
   Gift,
   History,
   LayoutDashboard,
@@ -13,7 +14,8 @@ export const ADMIN_NAV = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/admin/panelists', label: 'Panelists', icon: Users },
-  { to: '/admin/projects', label: 'Assigned Projects', icon: ClipboardList },
+  { to: '/admin/projects', label: 'Assigned History', icon: ClipboardList },
+  { to: '/admin/assign-project', label: 'Assigned Project', icon: ClipboardPen },
   { to: '/admin/rewards', label: 'Rewards', icon: Gift },
   { to: '/admin/reward-requests', label: 'Reward Requests', icon: Wallet },
   { to: '/admin/reward-history', label: 'Reward History', icon: History },

@@ -103,9 +103,8 @@ export function ProjectsPage() {
   return (
     <div>
       <PageHeader
-        title="Assigned Projects"
-        description="Assign survey URLs to panelists, then mark complete to credit reward points once."
-        crumbs={[{ label: 'Admin', to: '/admin/dashboard' }, { label: 'Assigned Projects' }]}
+        title="Assigned History"
+        description="Survey assignments already sent to panelists. Mark complete to credit reward points once."
         actions={
           <Button onClick={() => setAssignOpen(true)}>
             <Plus className="size-4" />

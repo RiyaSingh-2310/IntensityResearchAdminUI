@@ -1,6 +1,7 @@
 import { mapAdditionalProfiles, mapProfileQuestions } from '@/lib/additionalProfiles'
 import { apiRequest, toSearch } from '@/lib/apiClient'
 import { buildOnboardingAnswers, mapOnboardingCatalog, resolvePanelistAnswers, type OnboardingQuestion } from '@/lib/onboardingAnswers'
+import { activeQuestionnaireFilters, toPanelistAnswerQuery, type QuestionnaireFilter } from '@/lib/questionnaireFilter'
 import { mapWithConcurrency } from '@/lib/async'
 import { ApiError } from '@/lib/errors'
 import {
@@ -127,6 +128,40 @@ export const panelistService = {
     })
     return mapProfileQuestions(data)
   },
+  async onboardingQuestions() {
+    return fetchOnboardingCatalog()
+  },
+  /**
+   * GET /admin/panelists applies `q`, `status`, and `answers` before `page` and `limit`.
+   * `answers` is a JSON array; the API combines every object with AND.
+   */
+  async listForAssignment(query: {
+    search?: string
+    page?: number
+    pageSize?: number
+    filters?: QuestionnaireFilter[]
+  }): Promise<PaginatedResult<Panelist>> {
+    const page = query.page ?? 1
+    const pageSize = query.pageSize ?? 8
+    const filters = activeQuestionnaireFilters(query.filters ?? [])
+    const catalog = filters.length ? await fetchOnboardingCatalog() : []
+    const answers = toPanelistAnswerQuery(filters, catalog)
+    const data = await apiRequest<ApiPanelistListData>(
+      `/admin/panelists${toSearch({
+        q: query.search,
+        status: 'active',
+        page,
+        limit: pageSize,
+        answers: answers.length ? JSON.stringify(answers) : undefined,
+      })}`,
+    )
+    return {
+      data: (data.items ?? []).map((item) => mapPanelist(item)),
+      total: data.total ?? 0,
+      page: data.page ?? page,
+      pageSize: data.limit ?? pageSize,
+    }
+  },
   async credit(id: string, points: number, remark?: string) {
     if (!Number.isInteger(points) || points <= 0) {
       throw new ApiError('Enter a positive number of points.', 422)
@@ -162,14 +197,18 @@ export async function enrichPanelists(rows: Panelist[], limit = PROFILE_SCAN_LIM
 
 let catalogTask: Promise<OnboardingQuestion[]> | null = null
 
-function loadOnboardingCatalog() {
+function fetchOnboardingCatalog() {
   catalogTask ??= apiRequest<unknown>('/questions', { auth: false })
     .then(mapOnboardingCatalog)
     .catch((error: unknown) => {
       catalogTask = null
       return Promise.reject(error)
     })
-  return catalogTask.catch(() => [] as OnboardingQuestion[])
+  return catalogTask
+}
+
+function loadOnboardingCatalog() {
+  return fetchOnboardingCatalog().catch(() => [] as OnboardingQuestion[])
 }
 
 export async function listAllPanelists(search?: string, status?: string) {

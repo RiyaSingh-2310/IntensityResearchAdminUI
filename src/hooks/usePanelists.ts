@@ -2,12 +2,33 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { notify } from '@/lib/notify'
 import { queryKeys } from '@/lib/query'
 import { panelistService } from '@/services/panelist.service'
+import type { QuestionnaireFilter } from '@/lib/questionnaireFilter'
 import type { PanelistListQuery, UpdatePanelistInput } from '@/types'
 
 export function usePanelistList(query: PanelistListQuery) {
   return useQuery({
     queryKey: queryKeys.panelists(query),
     queryFn: () => panelistService.list(query),
+  })
+}
+
+export function useOnboardingQuestions() {
+  return useQuery({
+    queryKey: ['onboarding-questions'] as const,
+    queryFn: () => panelistService.onboardingQuestions(),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useAssignmentPanelists(query: {
+  search?: string
+  page: number
+  pageSize: number
+  filters: QuestionnaireFilter[]
+}) {
+  return useQuery({
+    queryKey: ['assignment-panelists', query] as const,
+    queryFn: () => panelistService.listForAssignment(query),
   })
 }
 

@@ -36,7 +36,6 @@ export function AnalyticsPage() {
       <PageHeader
         title="Analytics"
         description="Panelist questionnaire distributions and the rewards economy."
-        crumbs={[{ label: 'Admin', to: '/admin/dashboard' }, { label: 'Analytics' }]}
       />
 
       {rewards.isError ? (
