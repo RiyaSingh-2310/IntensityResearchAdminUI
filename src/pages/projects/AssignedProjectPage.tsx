@@ -63,7 +63,6 @@ export function AssignedProjectPage() {
     setStep('select')
   })
   const filteredDownload = useSurveyTemplateDownload()
-  const templateDownload = useSurveyTemplateDownload()
   const csvImport = useSurveyTemplateImport()
   const fileInput = useRef<HTMLInputElement>(null)
   const [bulkOpen, setBulkOpen] = useState(false)
@@ -154,17 +153,6 @@ export function AssignedProjectPage() {
       await saveCsv(blob, 'filtered-panelists.csv')
     } catch (error) {
       setExportError(getErrorMessage(error))
-    }
-  }
-
-  async function downloadTemplate() {
-    dismissImportNotices()
-    try {
-      const blob = await templateDownload.mutateAsync({})
-      await saveCsv(blob, 'survey-assignment-template.csv')
-      showImportNotice('success', 'Template downloaded.')
-    } catch (error) {
-      showImportNotice('error', friendlyImportError(getErrorMessage(error)))
     }
   }
 
@@ -330,10 +318,6 @@ export function AssignedProjectPage() {
               <p className="text-xs text-muted-foreground">
                 Each file is uploaded separately. Fill id, survey_url, and reward_points. Blank rows are skipped. Points are not credited until an assignment is marked complete.
               </p>
-              <Button type="button" variant="outline" className="h-9 w-full" onClick={() => void downloadTemplate()} disabled={templateDownload.isPending || uploading}>
-                <Download className="size-4" />
-                {templateDownload.isPending ? 'Downloading…' : 'Download Template'}
-              </Button>
               <Button type="button" variant="outline" className="h-9 w-full" onClick={() => fileInput.current?.click()} disabled={uploading}>
                 Import CSV
               </Button>
@@ -370,7 +354,7 @@ export function AssignedProjectPage() {
               ) : (
                 <p className="text-xs text-muted-foreground">No files selected.</p>
               )}
-              <Button type="button" className="h-9 w-full" onClick={() => void uploadCsv()} disabled={!csvFiles.length || uploading || templateDownload.isPending}>
+              <Button type="button" className="h-9 w-full" onClick={() => void uploadCsv()} disabled={!csvFiles.length || uploading}>
                 <Upload className="size-4" />
                 {uploading ? 'Uploading…' : 'Upload CSV'}
               </Button>
