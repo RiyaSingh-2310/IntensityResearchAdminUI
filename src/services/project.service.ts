@@ -131,15 +131,11 @@ export const projectService = {
     })
     return mapSurveyAssignment(unwrapSurvey(data))
   },
-  async downloadAssignmentTemplate(
-    query: { name?: string; email?: string; phone?: string; answers?: PanelistAnswerQuery[] } = {},
-  ) {
+  async downloadAssignmentTemplate(query: { search?: string; answers?: PanelistAnswerQuery[] } = {}) {
     const answers = query.answers ?? []
     return apiRequest<Blob>(
       `/admin/surveys/template${toSearch({
-        name: query.name,
-        email: query.email,
-        phone: query.phone,
+        q: query.search,
         status: 'active',
         answers: answers.length ? JSON.stringify(answers) : undefined,
       })}`,

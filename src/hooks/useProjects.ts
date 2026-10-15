@@ -28,7 +28,7 @@ function invalidateProjects(queryClient: ReturnType<typeof useQueryClient>) {
 
 export function useSurveyTemplateDownload() {
   return useMutation({
-    mutationFn: (query: { name?: string; email?: string; phone?: string; answers?: PanelistAnswerQuery[] }) =>
+    mutationFn: (query: { search?: string; answers?: PanelistAnswerQuery[] }) =>
       projectService.downloadAssignmentTemplate(query),
   })
 }

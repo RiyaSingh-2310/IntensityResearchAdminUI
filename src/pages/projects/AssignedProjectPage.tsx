@@ -1,5 +1,5 @@
-import { ChevronDown } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Download, Minus, Plus, Upload, X } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
 import { SearchField } from '@/components/common/SearchField'
 import { Field } from '@/components/shared/Field'
 import { PageHeader } from '@/components/shared/PageHeader'
@@ -20,13 +20,20 @@ import { Input } from '@/components/ui/input'
 import { PointsInput } from '@/components/ui/points-input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { toast } from 'sonner'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useAssignmentPanelists, useOnboardingQuestions } from '@/hooks/usePanelists'
-import { useAssignPanelists } from '@/hooks/useProjects'
+import { useAssignPanelists, useSurveyTemplateDownload, useSurveyTemplateImport } from '@/hooks/useProjects'
+import {
+  consolidateImportErrors,
+  FILL_SURVEY_DETAILS,
+  friendlyImportError,
+  importNoticeDuration,
+} from '@/lib/csvImportNotice'
 import { getErrorMessage } from '@/lib/errors'
 import { formatNumber } from '@/lib/format'
 import { fullName } from '@/lib/labels'
-import { activeQuestionnaireFilters, type QuestionnaireFilter } from '@/lib/questionnaireFilter'
+import { activeQuestionnaireFilters, toPanelistAnswerQuery, type QuestionnaireFilter } from '@/lib/questionnaireFilter'
 import {
   SURVEY_NAME_MAX_LENGTH,
   validatePoints,
@@ -41,7 +48,7 @@ const PAGE_SIZE = 8
 export function AssignedProjectPage() {
   const questions = useOnboardingQuestions()
   const [step, setStep] = useState<'select' | 'review'>('select')
-  const [detailsOpen, setDetailsOpen] = useState(true)
+  const [detailsOpen, setDetailsOpen] = useState(false)
   const [surveyName, setSurveyName] = useState('')
   const [surveyUrl, setSurveyUrl] = useState('')
   const [rewardPoints, setRewardPoints] = useState('')
@@ -55,10 +62,23 @@ export function AssignedProjectPage() {
     setSelected(new Map())
     setStep('select')
   })
+  const filteredDownload = useSurveyTemplateDownload()
+  const templateDownload = useSurveyTemplateDownload()
+  const csvImport = useSurveyTemplateImport()
+  const fileInput = useRef<HTMLInputElement>(null)
+  const [bulkOpen, setBulkOpen] = useState(false)
+  const [csvFiles, setCsvFiles] = useState<SelectedCsv[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState('')
+  const [exportError, setExportError] = useState('')
   const [attempted, setAttempted] = useState(false)
   const debouncedSearch = useDebouncedValue(search)
   const activeFilters = useMemo(() => activeQuestionnaireFilters(filters), [filters])
   const catalog = questions.data ?? []
+  const answerQuery = useMemo(
+    () => toPanelistAnswerQuery(activeFilters, questions.data ?? []),
+    [activeFilters, questions.data],
+  )
   const list = useAssignmentPanelists({
     search: debouncedSearch,
     page,
@@ -115,6 +135,114 @@ export function AssignedProjectPage() {
     setPage(1)
   }
 
+  async function saveCsv(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  async function downloadFiltered() {
+    setExportError('')
+    try {
+      const blob = await filteredDownload.mutateAsync({
+        search: debouncedSearch.trim() || undefined,
+        answers: answerQuery,
+      })
+      await saveCsv(blob, 'filtered-panelists.csv')
+    } catch (error) {
+      setExportError(getErrorMessage(error))
+    }
+  }
+
+  async function downloadTemplate() {
+    dismissImportNotices()
+    try {
+      const blob = await templateDownload.mutateAsync({})
+      await saveCsv(blob, 'survey-assignment-template.csv')
+      showImportNotice('success', 'Template downloaded.')
+    } catch (error) {
+      showImportNotice('error', friendlyImportError(getErrorMessage(error)))
+    }
+  }
+
+  async function addCsvFiles(list: FileList | null) {
+    if (!list?.length) return
+    const picked = await Promise.all(
+      [...list].map(async (file) => ({
+        key: `${file.name}:${file.size}:${file.lastModified}`,
+        file,
+        problem: await csvProblem(file),
+      })),
+    )
+    setCsvFiles((current) => {
+      const keys = new Set(current.map((item) => item.key))
+      return [...current, ...picked.filter((item) => !keys.has(item.key))]
+    })
+    dismissImportNotices()
+    if (fileInput.current) fileInput.current.value = ''
+  }
+
+  async function uploadCsv() {
+    const ready = csvFiles.filter((item) => !item.problem)
+    const invalid = csvFiles.filter((item) => item.problem)
+    dismissImportNotices()
+    if (!ready.length) {
+      showImportNotice(
+        'error',
+        consolidateImportErrors(
+          invalid.length
+            ? invalid.map((item) => ({ fileName: item.file.name, message: item.problem }))
+            : [{ fileName: '', message: 'Choose at least one CSV file.' }],
+        ),
+      )
+      return
+    }
+    setUploading(true)
+    const failures: { key: string; fileName: string; message: string }[] = invalid.map((item) => ({
+      key: item.key,
+      fileName: item.file.name,
+      message: item.problem,
+    }))
+    const failedKeys = new Set(invalid.map((item) => item.key))
+    let uploaded = 0
+    for (let index = 0; index < ready.length; index += 1) {
+      const item = ready[index]
+      setUploadProgress(`Uploading ${index + 1} of ${ready.length}: ${item.file.name}`)
+      try {
+        await csvImport.mutateAsync(item.file)
+        uploaded += 1
+      } catch (error) {
+        failedKeys.add(item.key)
+        failures.push({ key: item.key, fileName: item.file.name, message: getErrorMessage(error) })
+      }
+    }
+    setUploading(false)
+    setUploadProgress('')
+    const notice = consolidateImportErrors(failures)
+    const mixed = uploaded > 0 && failures.length > 0
+    if (uploaded > 0) {
+      showImportNotice('success', `${uploaded} ${uploaded === 1 ? 'file' : 'files'} uploaded.`, mixed)
+    }
+    if (notice) showImportNotice('error', notice, mixed)
+    if (failures.length) {
+      const distinct = new Set(failures.map((failure) => friendlyImportError(failure.message)))
+      setCsvFiles((current) =>
+        current
+          .filter((item) => failedKeys.has(item.key))
+          .map((item) => {
+            if (distinct.size < 2) return { ...item, problem: '' }
+            const failure = failures.find((entry) => entry.key === item.key)
+            return failure ? { ...item, problem: friendlyImportError(failure.message) } : item
+          }),
+      )
+      return
+    }
+    setCsvFiles([])
+  }
+
   function goToReview() {
     setAttempted(true)
     if (!canReview) {
@@ -139,60 +267,129 @@ export function AssignedProjectPage() {
     <div className="space-y-4">
       <PageHeader
         title="Assigned Project"
-        description="Assign one survey URL and point value to selected panelists, or download a CSV so each panelist can have a different URL."
+        description="Assign a survey manually to selected panelists, or import a CSV where each panelist has their own URL and points."
       />
 
-      <section className="rounded-2xl border bg-card">
-        <button
-          type="button"
-          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
-          aria-expanded={detailsOpen}
-          onClick={() => setDetailsOpen((open) => !open)}
-        >
-          <span className="font-medium">Assignment Details</span>
-          <ChevronDown className={`size-4 shrink-0 transition-transform ${detailsOpen ? 'rotate-180' : ''}`} />
-        </button>
-        {detailsOpen ? (
-          <div className="space-y-3 border-t px-4 py-4">
-            <div className="grid gap-3 md:grid-cols-3">
-              <Field label="Survey / project name" error={show('surveyName')}>
-                <Input
-                  value={surveyName}
-                  maxLength={SURVEY_NAME_MAX_LENGTH}
-                  placeholder="e.g. Brand feedback Q3"
-                  onChange={(event) => setSurveyName(event.target.value.slice(0, SURVEY_NAME_MAX_LENGTH))}
+      <section className="rounded-2xl border bg-card p-4">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+        <section className="overflow-hidden rounded-2xl border bg-card">
+          <button
+            type="button"
+            className="flex h-12 w-full items-center justify-between gap-3 px-4 text-left"
+            aria-expanded={detailsOpen}
+            onClick={() => setDetailsOpen((open) => !open)}
+          >
+            <span className="font-medium">Assignment Details</span>
+            {detailsOpen ? <Minus className="size-4 shrink-0" /> : <Plus className="size-4 shrink-0" />}
+          </button>
+          {detailsOpen ? (
+            <div className="space-y-3 border-t px-4 py-4">
+              <div className="grid gap-3">
+                <Field label="Survey / project name" error={show('surveyName')}>
+                  <Input
+                    value={surveyName}
+                    maxLength={SURVEY_NAME_MAX_LENGTH}
+                    placeholder="e.g. Brand feedback Q3"
+                    onChange={(event) => setSurveyName(event.target.value.slice(0, SURVEY_NAME_MAX_LENGTH))}
+                  />
+                </Field>
+                <Field label="Survey URL" error={show('surveyUrl')} hint="Use {panelist_id} if the vendor should receive that ID.">
+                  <Input
+                    value={surveyUrl}
+                    placeholder="https://surveys.example.com/s/brand?uid={panelist_id}"
+                    onChange={(event) => setSurveyUrl(event.target.value)}
+                  />
+                </Field>
+                <Field label="Reward points per panelist" error={show('rewardPoints')} hint="One URL is sent for every selected panelist.">
+                  <PointsInput value={rewardPoints} placeholder="e.g. 100" onValueChange={setRewardPoints} />
+                </Field>
+              </div>
+              <Field label="Remarks">
+                <Textarea
+                  value={remark}
+                  placeholder="Internal note for this assignment"
+                  onChange={(event) => setRemark(event.target.value)}
                 />
-              </Field>
-              <Field label="Survey URL" error={show('surveyUrl')} hint="Use {panelist_id} if the vendor should receive that id.">
-                <Input
-                  value={surveyUrl}
-                  placeholder="https://surveys.example.com/s/brand?uid={panelist_id}"
-                  onChange={(event) => setSurveyUrl(event.target.value)}
-                />
-              </Field>
-              <Field label="Reward points per panelist" error={show('rewardPoints')}>
-                <PointsInput value={rewardPoints} placeholder="e.g. 100" onValueChange={setRewardPoints} />
               </Field>
             </div>
-            <Field label="Remarks">
-              <Textarea
-                value={remark}
-                placeholder="Internal note for this assignment"
-                onChange={(event) => setRemark(event.target.value)}
+          ) : null}
+        </section>
+
+        <section className="overflow-hidden rounded-2xl border border-primary/30 bg-primary/5">
+          <button
+            type="button"
+            className="flex h-12 w-full items-center justify-between gap-3 px-4 text-left"
+            aria-expanded={bulkOpen}
+            onClick={() => setBulkOpen((open) => !open)}
+          >
+            <span className="font-medium">Bulk Assignment (CSV)</span>
+            {bulkOpen ? <Minus className="size-4 shrink-0" /> : <Plus className="size-4 shrink-0" />}
+          </button>
+          {bulkOpen ? (
+            <div className="space-y-3 border-t border-primary/20 px-4 py-4">
+              <p className="text-xs text-muted-foreground">
+                Each file is uploaded separately. Fill id, survey_url, and reward_points. Blank rows are skipped. Points are not credited until an assignment is marked complete.
+              </p>
+              <Button type="button" variant="outline" className="h-9 w-full" onClick={() => void downloadTemplate()} disabled={templateDownload.isPending || uploading}>
+                <Download className="size-4" />
+                {templateDownload.isPending ? 'Downloading…' : 'Download Template'}
+              </Button>
+              <Button type="button" variant="outline" className="h-9 w-full" onClick={() => fileInput.current?.click()} disabled={uploading}>
+                Import CSV
+              </Button>
+              <input
+                ref={fileInput}
+                type="file"
+                accept=".csv,text/csv"
+                multiple
+                className="sr-only"
+                aria-label="Import CSV"
+                onChange={(event) => void addCsvFiles(event.target.files)}
               />
-            </Field>
-          </div>
-        ) : null}
+              {csvFiles.length ? (
+                <ul className="space-y-2">
+                  {csvFiles.map((item) => (
+                    <li key={item.key} className="flex items-start justify-between gap-2 rounded-xl border bg-background px-3 py-2 text-sm">
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium">{item.file.name}</span>
+                        {item.problem ? <span className="text-xs text-destructive">{item.problem}</span> : null}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-xs"
+                        aria-label={`Remove ${item.file.name}`}
+                        disabled={uploading}
+                        onClick={() => setCsvFiles((current) => current.filter((entry) => entry.key !== item.key))}
+                      >
+                        <X className="size-3.5" />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-muted-foreground">No files selected.</p>
+              )}
+              <Button type="button" className="h-9 w-full" onClick={() => void uploadCsv()} disabled={!csvFiles.length || uploading || templateDownload.isPending}>
+                <Upload className="size-4" />
+                {uploading ? 'Uploading…' : 'Upload CSV'}
+              </Button>
+              {uploadProgress ? <p className="text-xs text-muted-foreground">{uploadProgress}</p> : null}
+            </div>
+          ) : null}
+        </section>
+      </div>
       </section>
 
-      <section className="space-y-3 rounded-2xl border bg-card p-4">
+      <section className="w-full space-y-3 rounded-2xl border bg-card p-4">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="font-medium">Search and Select Panelists</h2>
           <p className="text-sm text-muted-foreground tabular-nums">
             {selected.size} selected · {formatNumber(selected.size * (Number.isFinite(points) ? points : 0))} pts total
           </p>
         </div>
-        <div className="flex w-full items-center gap-2">
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex min-w-0 flex-1">
           <SearchField
             value={search}
             onChange={(value) => {
@@ -202,11 +399,23 @@ export function AssignedProjectPage() {
             placeholder="Name, Email, Mobile Number"
             searching={search !== debouncedSearch}
           />
-          <Button type="button" variant="outline" className="shrink-0" onClick={() => setFiltersOpen(true)}>
+          </div>
+          <Button type="button" variant="outline" className="h-9 shrink-0" onClick={() => setFiltersOpen(true)}>
             Advanced Filters
             {activeFilters.length ? ` (${activeFilters.length})` : ''}
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-9 shrink-0"
+            onClick={() => void downloadFiltered()}
+            disabled={filteredDownload.isPending}
+          >
+            <Download className="size-4" />
+            {filteredDownload.isPending ? 'Downloading…' : 'Download CSV'}
+          </Button>
         </div>
+        {exportError ? <p className="text-sm text-destructive">{exportError}</p> : null}
         {activeFilters.length ? (
           <p className="text-xs text-muted-foreground">
             {activeFilters.length} questionnaire {activeFilters.length === 1 ? 'filter is' : 'filters are'} applied with AND, before pagination.
@@ -301,40 +510,6 @@ export function AssignedProjectPage() {
         )}
       </section>
 
-      {/*
-        Panelist CSV Import / Export is commented out on this page.
-        Download and upload remain on Panelists via PanelistCsvDialog
-        (GET /admin/surveys/template and POST /admin/surveys/import).
-        Restore this section, useSurveyTemplateDownload, useSurveyTemplateImport,
-        and the downloadCsv/uploadCsv handlers together if this page should export again.
-      */}
-      {/* <section className="space-y-3 rounded-2xl border bg-card p-4">
-        <h2 className="font-medium">Panelist CSV Import / Export</h2>
-        <p className="text-sm text-muted-foreground">
-          Download does not use the survey URL or points above. The file includes active panelists matching the current search and questionnaire filters, not only the rows checked in the table. Columns are id, name, email, survey_name, survey_url, and reward_points.
-        </p>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <Button type="button" variant="outline" onClick={() => void downloadCsv()} disabled={download.isPending}>
-            <Download className="size-4" />
-            {download.isPending ? 'Downloading…' : 'Download CSV'}
-          </Button>
-          <Button type="button" variant="outline" onClick={() => fileInput.current?.click()} disabled={csvImport.isPending}>
-            <Upload className="size-4" />
-            {csvImport.isPending ? 'Uploading…' : 'Upload CSV'}
-          </Button>
-          <input
-            ref={fileInput}
-            type="file"
-            accept=".csv,text/csv"
-            className="hidden"
-            onChange={(event) => void uploadCsv(event.target.files?.[0])}
-          />
-        </div>
-        {csvImport.isPending ? <p className="text-xs text-muted-foreground">Uploading the CSV…</p> : null}
-        {csvError ? <p className="text-sm text-destructive">{csvError}</p> : null}
-        {csvMessage ? <p className="text-sm text-foreground">{csvMessage}</p> : null}
-      </section> */}
-
       <AdvancedFiltersDialog
         open={filtersOpen}
         catalog={catalog}
@@ -348,6 +523,34 @@ export function AssignedProjectPage() {
       />
     </div>
   )
+}
+
+type SelectedCsv = { key: string; file: File; problem: string }
+
+const TEMPLATE_COLUMNS = ['id', 'survey_url', 'reward_points']
+
+async function csvProblem(file: File) {
+  if (!file.name.toLowerCase().endsWith('.csv')) return 'Use a .csv file.'
+  if (file.size === 0) return 'This file is empty.'
+  const header = (await file.slice(0, 4096).text()).split(/\r?\n/, 1)[0] ?? ''
+  const columns = header.split(',').map((part) => part.trim().replace(/^"|"$/g, '').toLowerCase())
+  const missing = TEMPLATE_COLUMNS.filter((name) => !columns.includes(name))
+  if (missing.includes('survey_url') && missing.includes('reward_points')) return FILL_SURVEY_DETAILS
+  if (missing.includes('survey_url')) return 'Please fill Survey URL.'
+  if (missing.includes('reward_points')) return 'Please fill Reward Points.'
+  if (missing.length) return 'The CSV is missing a required column.'
+  return ''
+}
+
+function dismissImportNotices() {
+  toast.dismiss('csv-import-success')
+  toast.dismiss('csv-import-error')
+}
+
+function showImportNotice(kind: 'success' | 'error', message: string, mixed = false) {
+  if (!message) return
+  const id = kind === 'success' ? 'csv-import-success' : 'csv-import-error'
+  toast[kind](message, { id, duration: importNoticeDuration(message, mixed) })
 }
 
 function AdvancedFiltersDialog({

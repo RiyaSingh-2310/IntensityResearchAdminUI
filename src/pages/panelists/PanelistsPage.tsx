@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { FileSpreadsheet } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { DataTable } from '@/components/common/DataTable'
 import { DateRangePicker } from '@/components/common/DateRangePicker'
@@ -10,7 +9,6 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { SortableHeader } from '@/components/shared/SortableHeader'
 import { PanelistStatusBadge, VerificationBadge } from '@/components/shared/StatusBadge'
-import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
@@ -25,7 +23,6 @@ import { getErrorMessage } from '@/lib/errors'
 import { formatDate, formatNumber } from '@/lib/format'
 import { AGE_RANGE_LABELS, GENDER_LABELS, PANELIST_STATUS_LABELS, fullName } from '@/lib/labels'
 import type { AgeRange, Gender, Panelist, PanelistListQuery, PanelistStatus } from '@/types'
-import { PanelistCsvDialog } from './PanelistCsvDialog'
 import { PanelistEditDialog } from './PanelistEditDialog'
 
 const defaultQuery: PanelistListQuery = {
@@ -42,7 +39,6 @@ export function PanelistsPage() {
   const { search, setSearch, filters, setFilters, query, reset, sort, setPage } = useListQuery(defaultQuery)
   const list = usePanelistList(query)
   const [filterOpen, setFilterOpen] = useState(false)
-  const [csvOpen, setCsvOpen] = useState(false)
   const [editing, setEditing] = useState<Panelist | null>(null)
   const [deactivating, setDeactivating] = useState<Panelist | null>(null)
   const update = useUpdatePanelist(() => setEditing(null))
@@ -160,12 +156,7 @@ export function PanelistsPage() {
             mobileOpen={filterOpen}
             onMobileOpenChange={setFilterOpen}
             onClear={reset}
-          >
-            <Button type="button" variant="outline" onClick={() => setCsvOpen(true)}>
-              <FileSpreadsheet className="size-4" />
-              CSV Import / Export
-            </Button>
-          </FilterToolbar>
+          />
         }
         loading={list.isLoading}
         error={list.isError ? getErrorMessage(list.error) : undefined}
@@ -284,8 +275,6 @@ export function PanelistsPage() {
         onOpenChange={(open) => !open && setEditing(null)}
         onSubmit={(input) => editing && update.mutate({ id: editing.id, input })}
       />
-
-      <PanelistCsvDialog open={csvOpen} search={query.search} onOpenChange={setCsvOpen} />
 
       <ConfirmDialog
         open={Boolean(deactivating)}
