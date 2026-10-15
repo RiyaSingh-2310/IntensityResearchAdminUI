@@ -1,5 +1,6 @@
-import { ChevronDown, Download, Upload } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { ChevronDown } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { SearchField } from '@/components/common/SearchField'
 import { Field } from '@/components/shared/Field'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { PaginationBar } from '@/components/shared/PaginationBar'
@@ -21,11 +22,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useAssignmentPanelists, useOnboardingQuestions } from '@/hooks/usePanelists'
-import { useAssignPanelists, useSurveyTemplateDownload, useSurveyTemplateImport } from '@/hooks/useProjects'
+import { useAssignPanelists } from '@/hooks/useProjects'
 import { getErrorMessage } from '@/lib/errors'
 import { formatNumber } from '@/lib/format'
 import { fullName } from '@/lib/labels'
-import { activeQuestionnaireFilters, toPanelistAnswerQuery, type QuestionnaireFilter } from '@/lib/questionnaireFilter'
+import { activeQuestionnaireFilters, type QuestionnaireFilter } from '@/lib/questionnaireFilter'
 import {
   SURVEY_NAME_MAX_LENGTH,
   validatePoints,
@@ -45,9 +46,7 @@ export function AssignedProjectPage() {
   const [surveyUrl, setSurveyUrl] = useState('')
   const [rewardPoints, setRewardPoints] = useState('')
   const [remark, setRemark] = useState('')
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
+  const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [filters, setFilters] = useState<QuestionnaireFilter[]>([])
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -56,26 +55,12 @@ export function AssignedProjectPage() {
     setSelected(new Map())
     setStep('select')
   })
-  const download = useSurveyTemplateDownload()
-  const csvImport = useSurveyTemplateImport()
-  const fileInput = useRef<HTMLInputElement>(null)
-  const [csvError, setCsvError] = useState('')
-  const [csvMessage, setCsvMessage] = useState('')
   const [attempted, setAttempted] = useState(false)
-  const debouncedName = useDebouncedValue(name)
-  const debouncedEmail = useDebouncedValue(email)
-  const debouncedPhone = useDebouncedValue(phone)
-  const searchPending = name !== debouncedName || email !== debouncedEmail || phone !== debouncedPhone
+  const debouncedSearch = useDebouncedValue(search)
   const activeFilters = useMemo(() => activeQuestionnaireFilters(filters), [filters])
   const catalog = questions.data ?? []
-  const answerQuery = useMemo(
-    () => toPanelistAnswerQuery(activeFilters, questions.data ?? []),
-    [activeFilters, questions.data],
-  )
   const list = useAssignmentPanelists({
-    name: debouncedName,
-    email: debouncedEmail,
-    phone: debouncedPhone,
+    search: debouncedSearch,
     page,
     pageSize: PAGE_SIZE,
     filters: activeFilters,
@@ -128,48 +113,6 @@ export function AssignedProjectPage() {
   function clearFilters() {
     setFilters([])
     setPage(1)
-  }
-
-  async function downloadCsv() {
-    setCsvError('')
-    setCsvMessage('')
-    try {
-      const blob = await download.mutateAsync({
-        name: debouncedName,
-        email: debouncedEmail,
-        phone: debouncedPhone,
-        answers: answerQuery,
-      })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = 'survey-assignment-template.csv'
-      link.click()
-      URL.revokeObjectURL(url)
-      setCsvMessage('The template downloaded. It lists active panelists matching the current search and answer filters, with blank survey columns.')
-    } catch (error) {
-      setCsvMessage('')
-      setCsvError(getErrorMessage(error))
-    }
-  }
-
-  async function uploadCsv(file: File | undefined) {
-    setCsvError('')
-    setCsvMessage('')
-    if (!file) return
-    if (!file.name.toLowerCase().endsWith('.csv') || file.size === 0) {
-      setCsvError('Choose a non-empty CSV file from the survey assignment template.')
-      return
-    }
-    try {
-      await csvImport.mutateAsync(file)
-      setCsvMessage('The CSV uploaded. Blank rows are skipped. Points stay on each assignment until an admin marks it complete.')
-    } catch (error) {
-      setCsvMessage('')
-      setCsvError(getErrorMessage(error))
-    } finally {
-      if (fileInput.current) fileInput.current.value = ''
-    }
   }
 
   function goToReview() {
@@ -249,47 +192,21 @@ export function AssignedProjectPage() {
             {selected.size} selected · {formatNumber(selected.size * (Number.isFinite(points) ? points : 0))} pts total
           </p>
         </div>
-        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="grid w-full min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-3">
-            <Input
-              className="w-full"
-              value={name}
-              placeholder="Name"
-              aria-label="Name"
-              onChange={(event) => {
-                setName(event.target.value)
-                setPage(1)
-              }}
-            />
-            <Input
-              className="w-full"
-              value={email}
-              placeholder="Email"
-              aria-label="Email"
-              inputMode="email"
-              onChange={(event) => {
-                setEmail(event.target.value)
-                setPage(1)
-              }}
-            />
-            <Input
-              className="w-full"
-              value={phone}
-              placeholder="Mobile number"
-              aria-label="Mobile number"
-              inputMode="tel"
-              onChange={(event) => {
-                setPhone(event.target.value)
-                setPage(1)
-              }}
-            />
-          </div>
-          <Button type="button" variant="outline" className="shrink-0 self-end sm:self-auto" onClick={() => setFiltersOpen(true)}>
+        <div className="flex w-full items-center gap-2">
+          <SearchField
+            value={search}
+            onChange={(value) => {
+              setSearch(value)
+              setPage(1)
+            }}
+            placeholder="Name, Email, Mobile Number"
+            searching={search !== debouncedSearch}
+          />
+          <Button type="button" variant="outline" className="shrink-0" onClick={() => setFiltersOpen(true)}>
             Advanced Filters
             {activeFilters.length ? ` (${activeFilters.length})` : ''}
           </Button>
         </div>
-        {searchPending ? <p className="text-xs text-muted-foreground">Searching…</p> : null}
         {activeFilters.length ? (
           <p className="text-xs text-muted-foreground">
             {activeFilters.length} questionnaire {activeFilters.length === 1 ? 'filter is' : 'filters are'} applied with AND, before pagination.
@@ -384,7 +301,14 @@ export function AssignedProjectPage() {
         )}
       </section>
 
-      <section className="space-y-3 rounded-2xl border bg-card p-4">
+      {/*
+        Panelist CSV Import / Export is commented out on this page.
+        Download and upload remain on Panelists via PanelistCsvDialog
+        (GET /admin/surveys/template and POST /admin/surveys/import).
+        Restore this section, useSurveyTemplateDownload, useSurveyTemplateImport,
+        and the downloadCsv/uploadCsv handlers together if this page should export again.
+      */}
+      {/* <section className="space-y-3 rounded-2xl border bg-card p-4">
         <h2 className="font-medium">Panelist CSV Import / Export</h2>
         <p className="text-sm text-muted-foreground">
           Download does not use the survey URL or points above. The file includes active panelists matching the current search and questionnaire filters, not only the rows checked in the table. Columns are id, name, email, survey_name, survey_url, and reward_points.
@@ -409,7 +333,7 @@ export function AssignedProjectPage() {
         {csvImport.isPending ? <p className="text-xs text-muted-foreground">Uploading the CSV…</p> : null}
         {csvError ? <p className="text-sm text-destructive">{csvError}</p> : null}
         {csvMessage ? <p className="text-sm text-foreground">{csvMessage}</p> : null}
-      </section>
+      </section> */}
 
       <AdvancedFiltersDialog
         open={filtersOpen}

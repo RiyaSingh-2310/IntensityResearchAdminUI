@@ -21,9 +21,7 @@ export function useOnboardingQuestions() {
 }
 
 export function useAssignmentPanelists(query: {
-  name?: string
-  email?: string
-  phone?: string
+  search?: string
   page: number
   pageSize: number
   filters: QuestionnaireFilter[]

@@ -132,13 +132,11 @@ export const panelistService = {
     return fetchOnboardingCatalog()
   },
   /**
-   * GET /admin/panelists applies `name`, `email`, `phone`, `status`, and `answers` before `page` and `limit`.
+   * GET /admin/panelists applies `q` (name, email, or phone), `status`, and `answers` before `page` and `limit`.
    * `answers` is a JSON array; the API combines every object with AND.
    */
   async listForAssignment(query: {
-    name?: string
-    email?: string
-    phone?: string
+    search?: string
     page?: number
     pageSize?: number
     filters?: QuestionnaireFilter[]
@@ -150,9 +148,7 @@ export const panelistService = {
     const answers = toPanelistAnswerQuery(filters, catalog)
     const data = await apiRequest<ApiPanelistListData>(
       `/admin/panelists${toSearch({
-        name: query.name,
-        email: query.email,
-        phone: query.phone,
+        q: query.search,
         status: 'active',
         page,
         limit: pageSize,
