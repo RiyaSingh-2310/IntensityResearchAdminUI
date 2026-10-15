@@ -19,6 +19,7 @@ interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: unknown
   auth?: boolean
+  responseType?: 'json' | 'blob'
 }
 
 export function toSearch(query: object = {}) {
@@ -36,8 +37,11 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   const authRequest = options.auth !== false
   const url = joinApiUrl(path)
 
-  const headers: Record<string, string> = { Accept: 'application/json' }
-  if (options.body !== undefined) headers['Content-Type'] = 'application/json'
+  const formBody = typeof FormData !== 'undefined' && options.body instanceof FormData
+  const headers: Record<string, string> = {
+    Accept: options.responseType === 'blob' ? 'text/csv, application/json' : 'application/json',
+  }
+  if (options.body !== undefined && !formBody) headers['Content-Type'] = 'application/json'
   if (authRequest) {
     const token = getAccessToken()
     if (token) headers.Authorization = `Bearer ${token}`
@@ -50,7 +54,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
       headers,
       credentials: 'omit',
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      body: formBody ? options.body as FormData : options.body !== undefined ? JSON.stringify(options.body) : undefined,
     })
   } catch (error) {
     if (isTimeoutError(error)) {
@@ -60,6 +64,15 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   }
 
   if (response.status === 204) return undefined as T
+
+  if (options.responseType === 'blob' && response.ok) {
+    const blob = await response.blob()
+    const type = blob.type || response.headers.get('content-type') || ''
+    if (!blob.size || type.includes('application/json') || type.includes('text/html')) {
+      throw new ApiError('The server did not return a CSV file.', 502)
+    }
+    return blob as T
+  }
 
   const raw = await readPayload(response)
   if (raw === UNPARSEABLE) {

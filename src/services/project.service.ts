@@ -1,5 +1,6 @@
 import { ApiError } from '@/lib/errors'
 import { apiRequest, toSearch } from '@/lib/apiClient'
+import type { PanelistAnswerQuery } from '@/lib/questionnaireFilter'
 import { mapSurveyAssignment, paginateRows, sortRows } from '@/lib/mappers'
 import { isValidUrl } from '@/lib/validators'
 import type {
@@ -129,6 +130,22 @@ export const projectService = {
       body,
     })
     return mapSurveyAssignment(unwrapSurvey(data))
+  },
+  async downloadAssignmentTemplate(query: { search?: string; answers?: PanelistAnswerQuery[] } = {}) {
+    const answers = query.answers ?? []
+    return apiRequest<Blob>(
+      `/admin/surveys/template${toSearch({
+        q: query.search,
+        status: 'active',
+        answers: answers.length ? JSON.stringify(answers) : undefined,
+      })}`,
+      { responseType: 'blob' },
+    )
+  },
+  async importAssignmentTemplate(file: File) {
+    const body = new FormData()
+    body.append('file', file)
+    return apiRequest<unknown>('/admin/surveys/import', { method: 'POST', body })
   },
   async remove(id: string): Promise<{ ok: boolean }> {
     await apiRequest(`/admin/surveys/${toNumericId(id, 'assignment')}`, { method: 'DELETE' })

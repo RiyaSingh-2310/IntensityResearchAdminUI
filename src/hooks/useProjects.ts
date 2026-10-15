@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { PanelistAnswerQuery } from '@/lib/questionnaireFilter'
 import { notify } from '@/lib/notify'
 import { queryKeys } from '@/lib/query'
 import { projectService } from '@/services/project.service'
@@ -23,6 +24,24 @@ function invalidateProjects(queryClient: ReturnType<typeof useQueryClient>) {
   void queryClient.invalidateQueries({ queryKey: ['projects'] })
   void queryClient.invalidateQueries({ queryKey: ['panelists'] })
   void queryClient.invalidateQueries({ queryKey: ['analytics'] })
+}
+
+export function useSurveyTemplateDownload() {
+  return useMutation({
+    mutationFn: (query: { search?: string; answers?: PanelistAnswerQuery[] }) =>
+      projectService.downloadAssignmentTemplate(query),
+  })
+}
+
+export function useSurveyTemplateImport(onSuccess?: () => void) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (file: File) => projectService.importAssignmentTemplate(file),
+    onSuccess: () => {
+      invalidateProjects(queryClient)
+      onSuccess?.()
+    },
+  })
 }
 
 export function useAssignPanelists(onSuccess?: () => void) {
