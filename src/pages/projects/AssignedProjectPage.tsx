@@ -1,6 +1,5 @@
 import { ChevronDown, Download, Upload } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
-import { SearchField } from '@/components/common/SearchField'
 import { Field } from '@/components/shared/Field'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { PaginationBar } from '@/components/shared/PaginationBar'
@@ -46,7 +45,9 @@ export function AssignedProjectPage() {
   const [surveyUrl, setSurveyUrl] = useState('')
   const [rewardPoints, setRewardPoints] = useState('')
   const [remark, setRemark] = useState('')
-  const [search, setSearch] = useState('')
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [page, setPage] = useState(1)
   const [filters, setFilters] = useState<QuestionnaireFilter[]>([])
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -61,7 +62,10 @@ export function AssignedProjectPage() {
   const [csvError, setCsvError] = useState('')
   const [csvMessage, setCsvMessage] = useState('')
   const [attempted, setAttempted] = useState(false)
-  const debouncedSearch = useDebouncedValue(search)
+  const debouncedName = useDebouncedValue(name)
+  const debouncedEmail = useDebouncedValue(email)
+  const debouncedPhone = useDebouncedValue(phone)
+  const searchPending = name !== debouncedName || email !== debouncedEmail || phone !== debouncedPhone
   const activeFilters = useMemo(() => activeQuestionnaireFilters(filters), [filters])
   const catalog = questions.data ?? []
   const answerQuery = useMemo(
@@ -69,7 +73,9 @@ export function AssignedProjectPage() {
     [activeFilters, questions.data],
   )
   const list = useAssignmentPanelists({
-    search: debouncedSearch,
+    name: debouncedName,
+    email: debouncedEmail,
+    phone: debouncedPhone,
     page,
     pageSize: PAGE_SIZE,
     filters: activeFilters,
@@ -128,7 +134,12 @@ export function AssignedProjectPage() {
     setCsvError('')
     setCsvMessage('')
     try {
-      const blob = await download.mutateAsync({ search: debouncedSearch, answers: answerQuery })
+      const blob = await download.mutateAsync({
+        name: debouncedName,
+        email: debouncedEmail,
+        phone: debouncedPhone,
+        answers: answerQuery,
+      })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
@@ -238,21 +249,47 @@ export function AssignedProjectPage() {
             {selected.size} selected · {formatNumber(selected.size * (Number.isFinite(points) ? points : 0))} pts total
           </p>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <SearchField
-            value={search}
-            onChange={(value) => {
-              setSearch(value)
-              setPage(1)
-            }}
-            placeholder="Search by name, email, or mobile number"
-            searching={search !== debouncedSearch}
-          />
-          <Button type="button" variant="outline" className="shrink-0" onClick={() => setFiltersOpen(true)}>
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="grid w-full min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-3">
+            <Input
+              className="w-full"
+              value={name}
+              placeholder="Name"
+              aria-label="Name"
+              onChange={(event) => {
+                setName(event.target.value)
+                setPage(1)
+              }}
+            />
+            <Input
+              className="w-full"
+              value={email}
+              placeholder="Email"
+              aria-label="Email"
+              inputMode="email"
+              onChange={(event) => {
+                setEmail(event.target.value)
+                setPage(1)
+              }}
+            />
+            <Input
+              className="w-full"
+              value={phone}
+              placeholder="Mobile number"
+              aria-label="Mobile number"
+              inputMode="tel"
+              onChange={(event) => {
+                setPhone(event.target.value)
+                setPage(1)
+              }}
+            />
+          </div>
+          <Button type="button" variant="outline" className="shrink-0 self-end sm:self-auto" onClick={() => setFiltersOpen(true)}>
             Advanced Filters
             {activeFilters.length ? ` (${activeFilters.length})` : ''}
           </Button>
         </div>
+        {searchPending ? <p className="text-xs text-muted-foreground">Searching…</p> : null}
         {activeFilters.length ? (
           <p className="text-xs text-muted-foreground">
             {activeFilters.length} questionnaire {activeFilters.length === 1 ? 'filter is' : 'filters are'} applied with AND, before pagination.
